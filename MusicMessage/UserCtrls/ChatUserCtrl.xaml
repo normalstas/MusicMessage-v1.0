@@ -1,0 +1,174 @@
+﻿<UserControl x:Class="MusicMessage.UserCtrls.ChatUserCtrl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MusicMessage.UserCtrls"
+             xmlns:models="clr-namespace:MusicMessage.Models"
+             xmlns:conv="clr-namespace:MusicMessage.Converter"
+             MinWidth="300" MinHeight="200">
+    <UserControl.Resources>
+        <!-- Стили для контейнеров сообщений -->
+        <Style x:Key="MyMessageContainerStyle" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Right"/>
+            <Setter Property="Padding" Value="0,2,5,2"/>
+        </Style>
+
+        <Style x:Key="OtherMessageContainerStyle" TargetType="ListViewItem">
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="5,2,0,2"/>
+        </Style>
+        <Style x:Key="VoiceMessageButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                        CornerRadius="10">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                      VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Конвертеры -->
+        <conv:MessageStyleMultiConverter x:Key="MessageStyleMultiConverter"/>
+        <conv:ShowUserNameConverter x:Key="ShowUserNameConverter"/>
+        <conv:MessageAlignmentConverter x:Key="MessageAlignmentConverter"/>
+        <conv:MessageBackgroundConverter x:Key="MessageBackgroundConverter"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <!-- Шаблон сообщения -->
+        <DataTemplate DataType="{x:Type models:Message}">
+            <Grid>
+                <Grid.HorizontalAlignment>
+                    <MultiBinding Converter="{StaticResource MessageAlignmentConverter}">
+                        <Binding Path="SenderId"/>
+                        <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                    </MultiBinding>
+                </Grid.HorizontalAlignment>
+                <Border x:Name="TextMessageTemplate" 
+                CornerRadius="10" 
+                Padding="10" 
+                MaxWidth="300">
+                    <Border.Background>
+                        <MultiBinding Converter="{StaticResource MessageBackgroundConverter}">
+                            <Binding Path="SenderId"/>
+                            <Binding Path="DataContext.CurrentUserId" 
+                RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                        </MultiBinding>
+                    </Border.Background>
+                    <Border.Style>
+                        <MultiBinding Converter="{StaticResource MessageStyleMultiConverter}">
+                            <Binding Path="SenderId"/>
+                            <Binding Path="CurrentUserId"/>
+                        </MultiBinding>
+                    </Border.Style>
+
+                    <StackPanel>
+                        <TextBlock Text="{Binding Sender.UserName}" 
+                         FontWeight="Bold">
+                            <TextBlock.Visibility>
+                                <MultiBinding Converter="{StaticResource ShowUserNameConverter}">
+                                    <Binding Path="SenderId"/>
+                                    <Binding Path="DataContext.CurrentUserId" 
+                                   RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                </MultiBinding>
+                            </TextBlock.Visibility>
+                        </TextBlock>
+
+                        <TextBlock Text="{Binding ContentMess}" TextWrapping="Wrap"/>
+
+                        <TextBlock Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}" 
+                         FontSize="10" 
+                         Foreground="Gray"
+                         HorizontalAlignment="Right"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="VoiceMessageTemplate"
+        CornerRadius="10"
+        Padding="10"
+        MaxWidth="300"
+        Visibility="{Binding MessageType, Converter={StaticResource StringToVisibilityConverter}, ConverterParameter=Voice}">
+                    <Border.Background>
+                        <MultiBinding Converter="{StaticResource MessageBackgroundConverter}">
+                            <Binding Path="SenderId"/>
+                            <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                        </MultiBinding>
+                    </Border.Background>
+
+                    <Button Command="{Binding DataContext.PlayVoiceMessageCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    CommandParameter="{Binding}"
+                    Style="{StaticResource VoiceMessageButtonStyle}">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Image Source="/Assets/voice_icon.png" Width="20" Height="20" Margin="0,0,5,0"/>
+                            <TextBlock Text="{Binding Duration, StringFormat='{}{0:mm\\:ss}'}" 
+                               VerticalAlignment="Center"/>
+                            <ProgressBar Width="100" Height="5" Margin="10,0,0,0"
+                                 Value="{Binding PlaybackPosition}"
+                                 Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"/>
+                        </StackPanel>
+                    </Button>
+                </Border>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Лента сообщений -->
+        <ListView x:Name="MessagesListView"
+          ItemsSource="{Binding Messages}"
+          ScrollViewer.VerticalScrollBarVisibility="Auto"
+          VirtualizingStackPanel.IsVirtualizing="True"
+          VirtualizingStackPanel.ScrollUnit="Pixel"
+            BorderThickness="0"
+          Background="Transparent"
+          HorizontalContentAlignment="Stretch">
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel Orientation="Vertical" />
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+        </ListView>
+
+        <!-- Панель ввода -->
+        <Grid Grid.Row="1" Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Grid.Column="0" 
+                 Text="{Binding MessageText, UpdateSourceTrigger=PropertyChanged}"
+                 VerticalAlignment="Center"
+                 MinHeight="40"
+                 AcceptsReturn="True"
+                 VerticalScrollBarVisibility="Auto"/>
+            <Button Grid.Column="1" 
+             Content="Г" 
+                Command="{Binding PlayVoiceMessageCommand}"
+                 Margin="5,0,0,0"
+                Width="40"
+             Height="40"
+                 FontSize="16"
+                FontWeight="Bold"/>
+            <Button Grid.Column="2" 
+                Content="➤" 
+                Command="{Binding SendTextCommand}"
+                Margin="5,0,0,0"
+                Width="40"
+                Height="40"
+                FontSize="16"
+                FontWeight="Bold"/>
+        </Grid>
+    </Grid>
+</UserControl>

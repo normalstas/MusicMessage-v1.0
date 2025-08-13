@@ -1,0 +1,40 @@
+﻿<Window x:Class="MusicMessage.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MusicMessage"
+        xmlns:vm="clr-namespace:MusicMessage.ViewModels"
+        xmlns:us="clr-namespace:MusicMessage.UserCtrls" 
+        xmlns:ch="clr-namespace:MusicMessage.ViewModels"
+        mc:Ignorable="d" Height="450" Width="800" MinHeight="300" MinWidth="600">
+    <Window.Resources>
+
+        <DataTemplate DataType="{x:Type vm:ChatViewModel}">
+            <us:ChatUserCtrl/>
+        </DataTemplate>  
+    </Window.Resources>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="LeftColumn" Width="120" MinWidth="70"
+                              MaxWidth="400"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Button Content="Чат" 
+         Command="{Binding ShowChatCommand}" 
+         Grid.Column="0"/>
+
+        <Grid Grid.Column="0">
+            <Thumb Width="2" 
+   HorizontalAlignment="Right" 
+   Background="#FFBBBBBB"
+   Cursor="SizeWE"
+   DragDelta="Thumb_DragDelta"/>
+        </Grid>
+        
+        <ContentControl Grid.Column="1" 
+                        Content="{Binding CurrentView}"/>
+    </Grid>
+
+
+</Window>
