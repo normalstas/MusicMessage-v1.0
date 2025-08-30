@@ -1,0 +1,54 @@
+﻿<UserControl x:Class="MusicMessage.UserCtrls.LoginUserControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MusicMessage.UserCtrls"
+             xmlns:conv="clr-namespace:MusicMessage.Converter"
+             MinWidth="300" MinHeight="200">
+    <UserControl.Resources>
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10, 5"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        <Style TargetType="PasswordBox">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="5"/>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="Margin" Value="5, 10, 5, 0"/>
+        </Style>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+
+    <Grid VerticalAlignment="Center" HorizontalAlignment="Center">
+        <StackPanel Width="300">
+            <!-- Форма логина -->
+            <StackPanel Visibility="{Binding IsLoginMode, Converter={StaticResource BoolToVisibilityConverter}}">
+                <TextBlock Text="Вход" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBox Text="{Binding Username}" ToolTip="Введите имя пользователя"/>
+                <PasswordBox x:Name="LoginPasswordBox" PasswordChar="*"/>
+                <Button Content="Войти" Command="{Binding LoginCommand}"/>
+                <TextBlock>
+                    <Hyperlink Command="{Binding SwitchToRegisterCommand}">Нет аккаунта? Зарегистрируйтесь</Hyperlink>
+                </TextBlock>
+            </StackPanel>
+
+            <!-- Форма регистрации -->
+            <StackPanel Visibility="{Binding IsLoginMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                <TextBlock Text="Регистрация" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBox Text="{Binding Username}" ToolTip="Придумайте имя пользователя"/>
+                <TextBox Text="{Binding Email}" ToolTip="Введите ваш email"/>
+                <PasswordBox x:Name="RegisterPasswordBox" PasswordChar="*"/>
+                <Button Content="Зарегистрироваться" Command="{Binding RegisterCommand}"/>
+                <TextBlock>
+                    <Hyperlink Command="{Binding SwitchToLoginCommand}">Уже есть аккаунт? Войдите</Hyperlink>
+                </TextBlock>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

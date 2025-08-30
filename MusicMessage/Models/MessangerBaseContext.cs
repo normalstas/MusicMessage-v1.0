@@ -16,8 +16,9 @@ public partial class MessangerBaseContext : DbContext
     }
 
     public virtual DbSet<Message> Messages { get; set; }
+	public virtual DbSet<Reaction> Reactions { get; set; }
 
-    public virtual DbSet<User> Users { get; set; }
+	public virtual DbSet<User> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -31,9 +32,6 @@ public partial class MessangerBaseContext : DbContext
 
             entity.Property(e => e.AudioPath).HasMaxLength(50);
             entity.Property(e => e.MessageType)
-                .HasMaxLength(10)
-                .IsFixedLength();
-            entity.Property(e => e.Reactions)
                 .HasMaxLength(10)
                 .IsFixedLength();
             entity.Property(e => e.StickerId).HasMaxLength(50);
@@ -58,7 +56,23 @@ public partial class MessangerBaseContext : DbContext
         });
 
         OnModelCreatingPartial(modelBuilder);
-    }
+		modelBuilder.Entity<Reaction>(entity =>
+		{
+			entity.ToTable("Reactions");
+
+			entity.HasOne(d => d.Message)
+				.WithMany(p => p.MessageReactions)
+				.HasForeignKey(d => d.MessageId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(d => d.User)
+				.WithMany()
+				.HasForeignKey(d => d.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
+		});
+
+		OnModelCreatingPartial(modelBuilder);
+	}
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }

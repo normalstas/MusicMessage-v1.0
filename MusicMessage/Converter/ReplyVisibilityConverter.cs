@@ -9,18 +9,12 @@ using System.Windows;
 
 namespace MusicMessage.Converter
 {
-	public class BoolToVisibilityConverter : IValueConverter
+	public class ReplyVisibilityConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			bool isVisible = (bool)value;
-			bool invert = parameter?.ToString() == "Invert";
-
-			if (invert) isVisible = !isVisible;
-
-			return isVisible ? Visibility.Visible : Visibility.Collapsed;
+			return value != null ? Visibility.Visible : Visibility.Collapsed;
 		}
-
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{

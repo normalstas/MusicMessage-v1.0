@@ -1,0 +1,92 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using MusicMessage.Models;
+namespace MusicMessage.Repository
+{
+	public interface IAuthService
+	{
+		Task<User> LoginAsync(string username, string password);
+		Task<User> RegisterAsync(string username, string email, string password);
+		void Logout();
+		User CurrentUser { get; }
+		bool IsLoggedIn { get; }
+	}
+	public class AuthService : IAuthService
+	{
+		private readonly MessangerBaseContext _context;
+		private User _currentUser;
+
+		public AuthService(MessangerBaseContext context)
+		{
+			_context = context;
+		}
+
+		public User CurrentUser => _currentUser;
+		public bool IsLoggedIn => _currentUser != null;
+
+		public async Task<User> LoginAsync(string username, string password)
+		{
+			// Используем ConfigureAwait(false) для операций с БД
+			var user = await _context.Users
+				.FirstOrDefaultAsync(u => u.UserName == username)
+				.ConfigureAwait(false);
+
+			if (user == null)
+				return null;
+
+			var passwordHash = HashPassword(password);
+			if (user.PasswordHash != passwordHash)
+				return null;
+
+			_currentUser = user;
+			user.LastLogin = DateTime.UtcNow;
+
+			// Сохраняем изменения асинхронно
+			await _context.SaveChangesAsync().ConfigureAwait(false);
+
+			return user;
+		}
+
+		public async Task<User> RegisterAsync(string username, string email, string password)
+		{
+			// Проверка на существующего пользователя
+			if (await _context.Users.AnyAsync(u => u.UserName == username || u.Email == email))
+				return null;
+
+			var newUser = new User
+			{
+				UserName = username,
+				Email = email,
+				PasswordHash = HashPassword(password),
+				CreatedAt = DateTime.UtcNow
+			};
+
+			_context.Users.Add(newUser);
+			await _context.SaveChangesAsync();
+
+			// Не логинимся автоматически после регистрации?
+			// _currentUser = newUser;
+			return newUser;
+		}
+
+		public void Logout()
+		{
+			_currentUser = null;
+		}
+
+		private string HashPassword(string password)
+		{
+			// ВРЕМЕННАЯ РЕАЛИЗАЦИЯ. ДЛЯ ПРОДУКЦИИ ИСПОЛЬЗУЙТЕ BCrypt или PBKDF2!
+			using (var sha256 = SHA256.Create())
+			{
+				var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
+				return Convert.ToBase64String(bytes);
+			}
+		}
+	}
+}

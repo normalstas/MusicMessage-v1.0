@@ -16,11 +16,11 @@ namespace MusicMessage
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        public MainWindow(NavigationViewModel navigationViewModel)
         {
             InitializeComponent();
-
-        }
+			DataContext = navigationViewModel;
+		}
 
 		private void Thumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
 		{

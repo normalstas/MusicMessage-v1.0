@@ -12,12 +12,15 @@
 
         <DataTemplate DataType="{x:Type vm:ChatViewModel}">
             <us:ChatUserCtrl/>
-        </DataTemplate>  
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:LoginViewModel}">
+            <us:LoginUserControl/>
+        </DataTemplate>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="LeftColumn" Width="120" MinWidth="70"
-                              MaxWidth="400"/>
+                              MaxWidth="280"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Button Content="Чат" 
