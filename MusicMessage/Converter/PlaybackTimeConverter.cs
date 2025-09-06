@@ -12,20 +12,11 @@ namespace MusicMessage.Converter
 	{
 		public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (values.Length >= 2)
+			if (values[0] is TimeSpan duration && values[1] is string currentTime)
 			{
-				var currentTime = values[1] as string;
-				var duration = values[0] as TimeSpan?;
-
-				// Если есть текущее время воспроизведения, показываем его
-				if (!string.IsNullOrEmpty(currentTime))
-					return currentTime;
-
-				// Иначе показываем общую длительность
-				if (duration.HasValue)
-					return duration.Value.ToString("mm\\:ss");
+				return !string.IsNullOrEmpty(currentTime) ? currentTime : duration.ToString("mm\\:ss");
 			}
-			return "00:00";
+			return values[0] is TimeSpan ts ? ts.ToString("mm\\:ss") : "00:00";
 		}
 
 		public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

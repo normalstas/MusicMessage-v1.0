@@ -22,6 +22,9 @@ public partial class User
 	public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
 	public DateTime? LastLogin { get; set; }
+	public DateTime? LastSeen { get; set; }
+	public string? AvatarPath { get; set; }
+	public bool IsOnline { get; set; }
 
 	public virtual ICollection<Message> MessageReceivers { get; set; } = new List<Message>();
 

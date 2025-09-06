@@ -17,10 +17,11 @@ public partial class MessangerBaseContext : DbContext
 
     public virtual DbSet<Message> Messages { get; set; }
 	public virtual DbSet<Reaction> Reactions { get; set; }
-
+	public virtual DbSet<ChatPreview> ChatPreviews { get; set; }
 	public virtual DbSet<User> Users { get; set; }
+	public virtual DbSet<Friendship> Friendships { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=localhost; Database=MessangerBase; Trusted_Connection=True; MultipleActiveResultSets=true; TrustServerCertificate=true;encrypt=false");
 
@@ -69,6 +70,69 @@ public partial class MessangerBaseContext : DbContext
 				.WithMany()
 				.HasForeignKey(d => d.UserId)
 				.OnDelete(DeleteBehavior.Cascade);
+		});
+		modelBuilder.Entity<ChatPreview>(entity =>
+		{
+			entity.ToTable("ChatPreviews");
+			entity.HasKey(e => e.ChatPreviewId);
+
+			entity.Property(e => e.OtherUserName).HasMaxLength(50);
+			entity.Property(e => e.LastMessage).HasMaxLength(500);
+			entity.Property(e => e.LastMessageTime).HasColumnType("datetime2");
+			entity.Property(e => e.UnreadCount).HasDefaultValue(0);
+
+			entity.HasOne(e => e.User)
+				.WithMany()
+				.HasForeignKey(e => e.UserId)
+				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+
+			entity.HasOne(e => e.OtherUser)
+				.WithMany()
+				.HasForeignKey(e => e.OtherUserId)
+				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+
+			entity.HasIndex(e => new { e.UserId, e.OtherUserId })
+				.IsUnique();
+		}); modelBuilder.Entity<ChatPreview>(entity =>
+		{
+			entity.ToTable("ChatPreviews");
+			entity.HasKey(e => e.ChatPreviewId);
+
+			entity.Property(e => e.OtherUserName).HasMaxLength(50);
+			entity.Property(e => e.LastMessage).HasMaxLength(500);
+			entity.Property(e => e.LastMessageTime).HasColumnType("datetime2");
+			entity.Property(e => e.UnreadCount).HasDefaultValue(0);
+
+			entity.HasOne(e => e.User)
+				.WithMany()
+				.HasForeignKey(e => e.UserId)
+				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+
+			entity.HasOne(e => e.OtherUser)
+				.WithMany()
+				.HasForeignKey(e => e.OtherUserId)
+				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+
+			entity.HasIndex(e => new { e.UserId, e.OtherUserId })
+				.IsUnique();
+		});
+		modelBuilder.Entity<Friendship>(entity =>
+		{
+			entity.ToTable("Friendships");
+			entity.HasKey(e => e.FriendshipId);
+
+			entity.HasOne(d => d.Requester)
+				.WithMany()
+				.HasForeignKey(d => d.RequesterId)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			entity.HasOne(d => d.Addressee)
+				.WithMany()
+				.HasForeignKey(d => d.AddresseeId)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			entity.HasIndex(e => new { e.RequesterId, e.AddresseeId })
+				.IsUnique();
 		});
 
 		OnModelCreatingPartial(modelBuilder);

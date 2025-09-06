@@ -27,34 +27,99 @@ namespace MusicMessage.UserCtrls
     public partial class ChatUserCtrl : UserControl
     {
         public ChatUserCtrl()
-        {
-            InitializeComponent();
-			var serviceProvider = App.ServiceProvider;
-			var context = serviceProvider.GetService<MessangerBaseContext>();
-			var repository = serviceProvider.GetService<IMessageRepository>();
-			var authService = serviceProvider.GetService<IAuthService>();
-			DataContext = new ChatViewModel(repository, authService);
+		{
+			InitializeComponent();
 
-			// Подписка на изменение коллекции сообщений
-			var vm = (ChatViewModel)DataContext;
-			vm.Messages.CollectionChanged += (s, e) =>
-			{
-				if (e.NewItems?.Count > 0)
-					ScrollToLastMessage();
-			};
+
+			//var vm = (ChatViewModel)DataContext;
+			//vm.Messages.CollectionChanged += (s, e) =>
+			//{
+			//	if (e.NewItems?.Count > 0)
+			//		ScrollToLastMessage();
+			//};
+			Loaded += OnChatUserControlLoaded;
 			MessagesListView.PreviewMouseRightButtonDown += MessagesListView_PreviewMouseRightButtonDown;
 		}
-
-		private void ScrollToLastMessage()
+		private void OnChatUserControlLoaded(object sender, RoutedEventArgs e)
 		{
-			// Ждем обновления UI перед скроллом
+			if (DataContext is ChatViewModel vm)
+			{
+				// Подписываемся на событие прокрутки
+				vm.ScrollToLastRequested += OnScrollToLastRequested;
+
+				// Подписываемся на изменение коллекции для новых сообщений
+				vm.Messages.CollectionChanged += (s, args) =>
+				{
+					if (args.NewItems?.Count > 0)
+						ScrollToLastMessage();
+				};
+			}
+		}
+
+		private void OnScrollToLastRequested()
+		{
+			ScrollToLastMessage();
+		}
+		private void UserControl_Loaded(object sender, RoutedEventArgs e)
+		{
+			if (DataContext is ChatViewModel vm)
+			{
+				vm.Messages.CollectionChanged += (s, args) =>
+				{
+					if (args.NewItems?.Count > 0)
+						ScrollToLastMessage();
+				};
+			}
+		}
+		private void UserControl_Unloaded(object sender, RoutedEventArgs e)
+		{
+			if (DataContext is ChatViewModel vm)
+			{
+				vm.ScrollToLastRequested -= OnScrollToLastRequested;
+			}
+		}
+		private async void ScrollToLastMessage()
+		{
+			await Task.Delay(50);
 			Dispatcher.BeginInvoke(() =>
 			{
-				if (MessagesListView.Items.Count > 0)
+				try
 				{
-					MessagesListView.ScrollIntoView(MessagesListView.Items[^1]); // Используем индекс от конца
+					if (MessagesListView.Items.Count > 0)
+					{
+						var lastItem = MessagesListView.Items[^1];
+						MessagesListView.ScrollIntoView(lastItem);
+
+						// Ждем завершения рендеринга
+						Dispatcher.BeginInvoke(() =>
+						{
+							var scrollViewer = GetScrollViewer(MessagesListView);
+							if (scrollViewer != null)
+							{
+								scrollViewer.ScrollToEnd();
+							}
+						}, System.Windows.Threading.DispatcherPriority.Loaded);
+					}
+				}
+				catch (Exception ex)
+				{
+					Debug.WriteLine($"Scroll error: {ex.Message}");
 				}
 			}, System.Windows.Threading.DispatcherPriority.Background);
+		}
+		private static ScrollViewer GetScrollViewer(DependencyObject depObj)
+		{
+			if (depObj is ScrollViewer scrollViewer)
+				return scrollViewer;
+
+			for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+			{
+				var child = VisualTreeHelper.GetChild(depObj, i);
+				var result = GetScrollViewer(child);
+				if (result != null)
+					return result;
+			}
+			return null;
 		}
 		private void MessagesListView_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
 		{

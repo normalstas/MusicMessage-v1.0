@@ -7,6 +7,7 @@
         xmlns:vm="clr-namespace:MusicMessage.ViewModels"
         xmlns:us="clr-namespace:MusicMessage.UserCtrls" 
         xmlns:ch="clr-namespace:MusicMessage.ViewModels"
+        xmlns:conv="clr-namespace:MusicMessage.Converter"
         mc:Ignorable="d" Height="450" Width="800" MinHeight="300" MinWidth="600">
     <Window.Resources>
 
@@ -16,25 +17,47 @@
         <DataTemplate DataType="{x:Type vm:LoginViewModel}">
             <us:LoginUserControl/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ChatsListViewModel}">
+            <us:ChatsListView/>
+        </DataTemplate>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition x:Name="LeftColumn" Width="120" MinWidth="70"
-                              MaxWidth="280"/>
+            <ColumnDefinition x:Name="LeftColumn" Width="120" MinWidth="70" MaxWidth="280">
+                <ColumnDefinition.Style>
+                    <Style TargetType="ColumnDefinition">
+                        <Setter Property="Width" Value="120"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsLoggedIn}" Value="False">
+                                <Setter Property="Width" Value="0"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ColumnDefinition.Style>
+            </ColumnDefinition>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <Button Content="Чат" 
-         Command="{Binding ShowChatCommand}" 
-         Grid.Column="0"/>
 
-        <Grid Grid.Column="0">
+        <!-- Кнопка чата - видна только после авторизации -->
+       
+        <Button Content="Чаты" 
+        Command="{Binding ShowChatsCommand}" 
+        Grid.Column="0"
+        Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}"
+        Margin="5"
+        Height="30"
+        VerticalAlignment="Top"/>
+        <!-- Thumb для изменения размера - тоже скрываем -->
+        <Grid Grid.Column="0"
+              Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}">
             <Thumb Width="2" 
-   HorizontalAlignment="Right" 
-   Background="#FFBBBBBB"
-   Cursor="SizeWE"
-   DragDelta="Thumb_DragDelta"/>
+                   HorizontalAlignment="Right" 
+                   Background="#FFBBBBBB"
+                   Cursor="SizeWE"
+                   DragDelta="Thumb_DragDelta"/>
         </Grid>
-        
+
         <ContentControl Grid.Column="1" 
                         Content="{Binding CurrentView}"/>
     </Grid>

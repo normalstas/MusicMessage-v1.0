@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using System.Windows;
 namespace MusicMessage.Models;
 
 public partial class Message : INotifyPropertyChanged
@@ -212,10 +213,13 @@ public partial class Message : INotifyPropertyChanged
 			return string.Join(" ", summary);
 		}
 	}
-
+	
 	//ДОБАВЬTE метод для обновления реакции от конкретного пользователя
 	[NotMapped]
-	public ICommand ToggleReactionCommand { get; set; } // Эта команда будет назначена из ViewModel
+	public ICommand ToggleReactionCommand { get; set; }
+	// Эта команда будет назначена из ViewModel
+	public bool IsRead { get; set; } = false;
+	public bool IsEdited { get; set; } = false;
 	public virtual User Receiver { get; set; } = null!;
 
 	public virtual User Sender { get; set; } = null!;
@@ -228,5 +232,9 @@ public partial class Message : INotifyPropertyChanged
 	private void Reactions_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
 	{
 		OnPropertyChanged(nameof(ReactionsSummary));
+		Application.Current.Dispatcher.BeginInvoke(() =>
+		{
+			OnPropertyChanged(nameof(Reactions));
+		}, DispatcherPriority.Render);
 	}
 }

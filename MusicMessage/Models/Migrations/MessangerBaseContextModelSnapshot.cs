@@ -22,6 +22,81 @@ namespace MusicMessage.Models.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("MusicMessage.Models.ChatPreview", b =>
+                {
+                    b.Property<int>("ChatPreviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChatPreviewId"));
+
+                    b.Property<string>("LastMessage")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("LastMessageTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OtherUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OtherUserName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("UnreadCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ChatPreviewId");
+
+                    b.HasIndex("OtherUserId");
+
+                    b.HasIndex("UserId", "OtherUserId")
+                        .IsUnique();
+
+                    b.ToTable("ChatPreviews", (string)null);
+                });
+
+            modelBuilder.Entity("MusicMessage.Models.Friendship", b =>
+                {
+                    b.Property<int>("FriendshipId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("FriendshipId"));
+
+                    b.Property<int>("AddresseeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RequesterId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("FriendshipId");
+
+                    b.HasIndex("AddresseeId");
+
+                    b.HasIndex("RequesterId", "AddresseeId")
+                        .IsUnique();
+
+                    b.ToTable("Friendships", (string)null);
+                });
+
             modelBuilder.Entity("MusicMessage.Models.Message", b =>
                 {
                     b.Property<int>("MessageId")
@@ -52,6 +127,12 @@ namespace MusicMessage.Models.Migrations
                     b.Property<bool>("IsDeletedForSender")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MessageType")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -77,6 +158,8 @@ namespace MusicMessage.Models.Migrations
                     b.HasKey("MessageId");
 
                     b.HasIndex("ReceiverId");
+
+                    b.HasIndex("ReplyToMessageId");
 
                     b.HasIndex("SenderId");
 
@@ -118,6 +201,9 @@ namespace MusicMessage.Models.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
+                    b.Property<string>("AvatarPath")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -126,7 +212,13 @@ namespace MusicMessage.Models.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastLogin")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastSeen")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
@@ -143,6 +235,44 @@ namespace MusicMessage.Models.Migrations
                     b.ToTable("User", (string)null);
                 });
 
+            modelBuilder.Entity("MusicMessage.Models.ChatPreview", b =>
+                {
+                    b.HasOne("MusicMessage.Models.User", "OtherUser")
+                        .WithMany()
+                        .HasForeignKey("OtherUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MusicMessage.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("OtherUser");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MusicMessage.Models.Friendship", b =>
+                {
+                    b.HasOne("MusicMessage.Models.User", "Addressee")
+                        .WithMany()
+                        .HasForeignKey("AddresseeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("MusicMessage.Models.User", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Addressee");
+
+                    b.Navigation("Requester");
+                });
+
             modelBuilder.Entity("MusicMessage.Models.Message", b =>
                 {
                     b.HasOne("MusicMessage.Models.User", "Receiver")
@@ -151,6 +281,10 @@ namespace MusicMessage.Models.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Message_User1");
 
+                    b.HasOne("MusicMessage.Models.Message", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId");
+
                     b.HasOne("MusicMessage.Models.User", "Sender")
                         .WithMany("MessageSenders")
                         .HasForeignKey("SenderId")
@@ -158,6 +292,8 @@ namespace MusicMessage.Models.Migrations
                         .HasConstraintName("FK_Message_User");
 
                     b.Navigation("Receiver");
+
+                    b.Navigation("ReplyToMessage");
 
                     b.Navigation("Sender");
                 });

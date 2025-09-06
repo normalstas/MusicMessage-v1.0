@@ -22,6 +22,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
   </ItemGroup>
@@ -29,6 +30,10 @@
   <ItemGroup>
     <Resource Include="Assets\pause_icon.png" />
     <Resource Include="Assets\play_icon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\Migrations\" />
   </ItemGroup>
 
 </Project>

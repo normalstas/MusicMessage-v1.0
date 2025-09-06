@@ -27,13 +27,19 @@ namespace MusicMessage
 
 		private void ConfigureServices(IServiceCollection services)
 		{
-			services.AddDbContext<MessangerBaseContext>();
+			// ИЗМЕНИТЕ на Transient и добавьте фабрику контекста
+			services.AddDbContextFactory<MessangerBaseContext>(options =>
+	   options.UseSqlServer("Server=localhost; Database=MessangerBase; Trusted_Connection=True; MultipleActiveResultSets=true; TrustServerCertificate=true;encrypt=false"),
+	   ServiceLifetime.Transient);
+
 			services.AddSingleton<IAuthService, AuthService>();
-			services.AddScoped<IMessageRepository, MessageRepository>();
+			// Измените репозитории на Transient
+			services.AddTransient<IMessageRepository, MessageRepository>();
+			services.AddTransient<IChatRepository, ChatRepository>();
 
 			services.AddScoped<LoginViewModel>();
 			services.AddScoped<NavigationViewModel>();
-			services.AddScoped<Func<ChatViewModel>>(sp => () => sp.GetRequiredService<ChatViewModel>());
+			services.AddScoped<ChatsListViewModel>();
 			services.AddScoped<ChatViewModel>();
 
 			services.AddScoped<MainWindow>();

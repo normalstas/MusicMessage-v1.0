@@ -7,7 +7,13 @@
              xmlns:models="clr-namespace:MusicMessage.Models"
              xmlns:conv="clr-namespace:MusicMessage.Converter"
              xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-             MinWidth="300" MinHeight="200">
+             MinWidth="300" MinHeight="200"
+             Loaded="UserControl_Loaded">
+    <i:Interaction.Triggers>
+        <i:EventTrigger EventName="Loaded">
+            <i:InvokeCommandAction Command="{Binding LoadedCommand}"/>
+        </i:EventTrigger>
+    </i:Interaction.Triggers>
     <UserControl.Resources>
         <Style x:Key="MyMessageContainerStyle" TargetType="ListViewItem">
             <Setter Property="HorizontalContentAlignment" Value="Right"/>
@@ -133,6 +139,40 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="HorizontalReactionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="3,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                        CornerRadius="12"
+                        Padding="3,2">
+                            <!-- Orientation="Vertical" - эмодзи СВЕРХУ, никнейм СНИЗУ -->
+                            <StackPanel Orientation="Vertical" 
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Emoji}" 
+                                   FontSize="14"
+                                   HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding User.UserName}" 
+                                   FontSize="9"
+                                   Foreground="Gray"
+                                   HorizontalAlignment="Center"
+                                   TextAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#20000000"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Storyboard x:Key="PulseAnimation" x:Name="PulseAnimation" RepeatBehavior="Forever">
             <!-- Пульсация opacity -->
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)">
@@ -194,6 +234,7 @@
         <conv:IsMyMessageMultiConverter x:Key="IsMyMessageMultiConverter"/>
         <conv:ReplyVisibilityConverter x:Key="ReplyVisibilityConverter"/>
         <conv:EditedIndicatorConverter x:Key="EditedIndicatorConverter"/>
+
         <!-- Шаблон сообщения -->
         <DataTemplate DataType="{x:Type models:Message}">
             <Grid>
@@ -252,105 +293,74 @@
                             <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
                         </MultiBinding>
                     </Border.Background>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                    <StackPanel>
-                        <TextBlock Text="{Binding Sender.UserName}" FontWeight="Bold">
-                            <TextBlock.Visibility>
-                                <MultiBinding Converter="{StaticResource ShowUserNameConverter}">
-                                    <Binding Path="SenderId"/>
-                                    <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                </MultiBinding>
-                            </TextBlock.Visibility>
-                        </TextBlock>
+                        <!-- Основное содержимое сообщения -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding Sender.UserName}" FontWeight="Bold">
+                                <TextBlock.Visibility>
+                                    <MultiBinding Converter="{StaticResource ShowUserNameConverter}">
+                                        <Binding Path="SenderId"/>
+                                        <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                    </MultiBinding>
+                                </TextBlock.Visibility>
+                            </TextBlock>
 
-                        <TextBlock Text="{Binding ContentMess}" TextWrapping="Wrap"/>
+                            <TextBlock Text="{Binding ContentMess}" TextWrapping="Wrap"/>
 
-                        <!-- Время и иконка редактирования -->
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <!-- Время и иконка редактирования -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBlock Text="✎" 
+                                <TextBlock Text="✎" 
                        Foreground="Gray" 
                        FontSize="10"
+                                           Grid.Column="0"
                        HorizontalAlignment="Right"
                        VerticalAlignment="Top"
                        Margin="0,-5,-5,0"
                        ToolTip="Сообщение отредактировано"
                        Visibility="{Binding Timestamp, Converter={StaticResource EditedIndicatorConverter}}"/>
 
-                            <TextBlock Grid.Column="1"
+                                <TextBlock Grid.Column="1"
                        Text="{Binding Timestamp, StringFormat='{}{0:dd.MM HH:mm}'}" 
                        FontSize="10" 
                        Foreground="Gray"
                        HorizontalAlignment="Right"/>
-                        </Grid>
+                            </Grid>
+                        </StackPanel>
 
-                        <!-- Панель реакций ДОБАВЛЯЕМ В КОНЕЦ -->
-                        <ItemsControl ItemsSource="{Binding Reactions}"
-                      Margin="0,5,0,0">
-                            <ItemsControl.HorizontalAlignment>
-                                <MultiBinding Converter="{StaticResource MessageAlignmentConverter}">
-                                    <Binding Path="SenderId"/>
-                                    <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                </MultiBinding>
-                            </ItemsControl.HorizontalAlignment>
+                        <!-- Реакции сбоку -->
+                        <ItemsControl Grid.Column="1"
+              ItemsSource="{Binding Reactions}"
+              Margin="5,0,0,0"
+              VerticalAlignment="Bottom">
+                            <!-- ИЗМЕНИТЕ на Orientation="Horizontal" -->
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
+                                    <WrapPanel Orientation="Horizontal" MaxWidth="200"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="2,1">
-                                        <Button Background="Transparent"
-                    BorderThickness="0"
-                    Padding="0"
+                                    <Button Style="{StaticResource HorizontalReactionButtonStyle}"
                     Command="{Binding DataContext.ToggleReactionCommand, 
                              RelativeSource={RelativeSource AncestorType=UserControl}}"
                     CommandParameter="{Binding}"
-                    Cursor="Hand">
-
-                                            <!-- ОЧЕНЬ ВАЖНО: отключаем все стандартные стили кнопки -->
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <ContentPresenter/>
-                                                </ControlTemplate>
-                                            </Button.Template>
-
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <!-- Эмодзи с анимацией -->
-                                                <TextBlock Text="{Binding Emoji}" 
-                               FontSize="16"
-                               VerticalAlignment="Center"
-                               RenderTransformOrigin="0.5,0.5">
-                                                    <TextBlock.RenderTransform>
-                                                        <ScaleTransform/>
-                                                    </TextBlock.RenderTransform>
-                                                    <TextBlock.Triggers>
-                                                        <EventTrigger RoutedEvent="Loaded">
-                                                            <BeginStoryboard Storyboard="{StaticResource ReactionAnimation}"/>
-                                                        </EventTrigger>
-                                                    </TextBlock.Triggers>
-                                                </TextBlock>
-
-                                                <!-- Имя пользователя -->
-                                                <TextBlock Text="{Binding User.UserName}" 
-                               FontSize="10"
-                               Foreground="Gray"
-                               Margin="2,0,0,0"
-                               VerticalAlignment="Center"/>
-                                            </StackPanel>
-
-                                            <!-- УБИРАЕМ ВЕСЬ СТИЛЬ и триггеры -->
-                                        </Button>
-                                    </StackPanel>
+                    Cursor="Hand"
+                    Margin="2,0,2,0"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                    </StackPanel>
+                    </Grid>
+
                 </Border>
 
                 <!-- Голосовое сообщение -->
@@ -367,149 +377,115 @@
                     </Border.Background>
 
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <!-- Основной контент -->
-                            <RowDefinition Height="Auto"/>
-                            <!-- Время -->
-                            <RowDefinition Height="Auto"/>
-                            <!-- Реакции -->
-                        </Grid.RowDefinitions>
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                            <!-- Кнопка воспроизведения -->
-                            <Button Grid.Column="0"
-    Command="{Binding DataContext.PlayVoiceMessageCommand, 
-            RelativeSource={RelativeSource AncestorType=UserControl}}"
-    CommandParameter="{Binding}"
-    Margin="0,0,10,0">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource PlayButtonStyle}">
-                                        <Setter Property="Content">
-                                            <Setter.Value>
-                                                <Image x:Name="PlayIcon" Source="D:\Vs project\MusicMessage\MusicMessage\Assets\play_icon.png" Width="20" Height="20"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                                <Setter Property="Content">
-                                                    <Setter.Value>
-                                                        <Image Source="D:\Vs project\MusicMessage\MusicMessage\Assets\pause_icon.png" Width="20" Height="20"/>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
+                        <!-- Основное содержимое голосового сообщения -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <!-- Визуализация волн -->
-                            <ItemsControl Grid.Column="1" 
-    ItemsSource="{Binding WaveformDataList, UpdateSourceTrigger=PropertyChanged}"
-    Style="{StaticResource WaveformStyle}"
-    VerticalAlignment="Center"
-    HorizontalAlignment="Stretch"
-    Height="30">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            </ItemsControl>
+                            <!-- Первая строка: кнопка, волны, длительность -->
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Длительность -->
-                            <TextBlock Grid.Column="2"
-           Margin="10,0,0,0"
-           VerticalAlignment="Center"
-           Foreground="#555555">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0:mm\\:ss}">
-                                        <MultiBinding.Converter>
-                                            <conv:PlaybackTimeConverter/>
-                                        </MultiBinding.Converter>
-                                        <Binding Path="Duration"/>
-                                        <Binding Path="CurrentPlaybackTime"/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
+                                <!-- Кнопка воспроизведения -->
+                                <Button Grid.Column="0"
+                        Command="{Binding DataContext.PlayVoiceMessageCommand, 
+                                RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"
+                        Margin="0,0,10,0">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PlayButtonStyle}">
+                                            <Setter Property="Content">
+                                                <Setter.Value>
+                                                    <Image x:Name="PlayIcon" Source="D:\Vs project\MusicMessage\MusicMessage\Assets\play_icon.png" Width="20" Height="20"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                    <Setter Property="Content">
+                                                        <Setter.Value>
+                                                            <Image Source="D:\Vs project\MusicMessage\MusicMessage\Assets\pause_icon.png" Width="20" Height="20"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
 
-                        </Grid>
+                                <!-- Визуализация волн -->
+                                <ItemsControl Grid.Column="1" 
+                              ItemsSource="{Binding WaveformDataList, UpdateSourceTrigger=PropertyChanged}"
+                              Style="{StaticResource WaveformStyle}"
+                              VerticalAlignment="Center"
+                              HorizontalAlignment="Stretch"
+                              Height="30">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                </ItemsControl>
+
+                                <!-- Длительность -->
+                                <TextBlock Grid.Column="2"
+                           Margin="10,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="#555555">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0:mm\\:ss}">
+                                            <MultiBinding.Converter>
+                                                <conv:PlaybackTimeConverter/>
+                                            </MultiBinding.Converter>
+                                            <Binding Path="Duration"/>
+                                            <Binding Path="CurrentPlaybackTime"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Grid>
+
+                            <!-- Вторая строка: время сообщения -->
                             <TextBlock Grid.Row="1"
-                   Text="{Binding Timestamp, StringFormat='{}{0:dd.MM HH:mm}'}" 
-                   FontSize="10" 
-                   Foreground="Gray"
-                   HorizontalAlignment="Right"
-                   Margin="0,5,0,0"/>
-                        <ItemsControl Grid.Row="2" 
-                      ItemsSource="{Binding Reactions}"
-                      Margin="0,5,0,0">
-                            <ItemsControl.HorizontalAlignment>
-                                <MultiBinding Converter="{StaticResource MessageAlignmentConverter}">
-                                    <Binding Path="SenderId"/>
-                                    <Binding Path="DataContext.CurrentUserId" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                </MultiBinding>
-                            </ItemsControl.HorizontalAlignment>
+                       Text="{Binding Timestamp, StringFormat='{}{0:dd.MM HH:mm}'}" 
+                       FontSize="10" 
+                       Foreground="Gray"
+                       HorizontalAlignment="Right"
+                       Margin="0,5,0,0"/>
+                        </Grid>
+
+                        <!-- Реакции сбоку -->
+                        <ItemsControl Grid.Column="1"
+              ItemsSource="{Binding Reactions}"
+              Margin="5,0,0,0"
+              VerticalAlignment="Bottom">
+                            <!-- ИЗМЕНИТЕ на Orientation="Horizontal" -->
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
+                                    <WrapPanel Orientation="Horizontal" MaxWidth="200"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="2,1">
-                                        <Button Background="Transparent"
-                    BorderThickness="0"
-                    Padding="0"
+                                    <Button Style="{StaticResource HorizontalReactionButtonStyle}"
                     Command="{Binding DataContext.ToggleReactionCommand, 
                              RelativeSource={RelativeSource AncestorType=UserControl}}"
                     CommandParameter="{Binding}"
-                    Cursor="Hand">
-
-                                            <!-- ОЧЕНЬ ВАЖНО: отключаем все стандартные стили кнопки -->
-                                            <Button.Template>
-                                                <ControlTemplate TargetType="Button">
-                                                    <ContentPresenter/>
-                                                </ControlTemplate>
-                                            </Button.Template>
-
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <!-- Эмодзи с анимацией -->
-                                                <TextBlock Text="{Binding Emoji}" 
-                               FontSize="16"
-                               VerticalAlignment="Center"
-                               RenderTransformOrigin="0.5,0.5">
-                                                    <TextBlock.RenderTransform>
-                                                        <ScaleTransform/>
-                                                    </TextBlock.RenderTransform>
-                                                    <TextBlock.Triggers>
-                                                        <EventTrigger RoutedEvent="Loaded">
-                                                            <BeginStoryboard Storyboard="{StaticResource ReactionAnimation}"/>
-                                                        </EventTrigger>
-                                                    </TextBlock.Triggers>
-                                                </TextBlock>
-
-                                                <!-- Имя пользователя -->
-                                                <TextBlock Text="{Binding User.UserName}" 
-                               FontSize="10"
-                               Foreground="Gray"
-                               Margin="2,0,0,0"
-                               VerticalAlignment="Center"/>
-                                            </StackPanel>
-
-                                            <!-- УБИРАЕМ ВЕСЬ СТИЛЬ и триггеры -->
-                                        </Button>
-                                    </StackPanel>
+                    Cursor="Hand"
+                    Margin="2,0,2,0"/>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                       
                     </Grid>
-
                 </Border>
             </Grid>
         </DataTemplate>
@@ -523,18 +499,18 @@
 
         <!-- Лента сообщений -->
         <ListView x:Name="MessagesListView" Grid.Row="0"
-              ItemsSource="{Binding Messages}"
-              ScrollViewer.VerticalScrollBarVisibility="Auto"
-              VirtualizingStackPanel.IsVirtualizing="True"
-              VirtualizingStackPanel.ScrollUnit="Pixel"
-              BorderThickness="0"
-              Background="Transparent"
-              HorizontalContentAlignment="Stretch">
+      ItemsSource="{Binding Messages}"
+      ScrollViewer.VerticalScrollBarVisibility="Auto"
+      VirtualizingStackPanel.IsVirtualizing="True"
+            BorderThickness="0"
+      Background="Transparent"
+      HorizontalContentAlignment="Stretch">
             <ListView.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel Orientation="Vertical" />
                 </ItemsPanelTemplate>
             </ListView.ItemsPanel>
+
         </ListView>
 
         <!-- Панель ответа -->

@@ -24,9 +24,12 @@ namespace MusicMessage
 
 		private void Thumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
 		{
-			var newWidth = LeftColumn.Width.Value + e.HorizontalChange;
-			newWidth = Math.Max(LeftColumn.MinWidth, Math.Min(LeftColumn.MaxWidth, newWidth));
-			LeftColumn.Width = new GridLength(newWidth);
+			if (DataContext is NavigationViewModel viewModel && viewModel.IsLoggedIn)
+			{
+				var newWidth = LeftColumn.Width.Value + e.HorizontalChange;
+				newWidth = Math.Max(LeftColumn.MinWidth, Math.Min(LeftColumn.MaxWidth, newWidth));
+				LeftColumn.Width = new GridLength(newWidth);
+			}
 		}
 	}
 }

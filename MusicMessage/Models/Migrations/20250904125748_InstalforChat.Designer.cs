@@ -12,8 +12,8 @@ using MusicMessage.Models;
 namespace MusicMessage.Models.Migrations
 {
     [DbContext(typeof(MessangerBaseContext))]
-    [Migration("20250829104455_install")]
-    partial class install
+    [Migration("20250904125748_InstalforChat")]
+    partial class InstalforChat
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -55,6 +55,12 @@ namespace MusicMessage.Models.Migrations
                     b.Property<bool>("IsDeletedForSender")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsEdited")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MessageType")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -81,9 +87,38 @@ namespace MusicMessage.Models.Migrations
 
                     b.HasIndex("ReceiverId");
 
+                    b.HasIndex("ReplyToMessageId");
+
                     b.HasIndex("SenderId");
 
                     b.ToTable("Message", (string)null);
+                });
+
+            modelBuilder.Entity("MusicMessage.Models.Reaction", b =>
+                {
+                    b.Property<int>("ReactionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ReactionId"));
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ReactionId");
+
+                    b.HasIndex("MessageId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Reactions", (string)null);
                 });
 
             modelBuilder.Entity("MusicMessage.Models.User", b =>
@@ -93,6 +128,30 @@ namespace MusicMessage.Models.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+
+                    b.Property<string>("AvatarPath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLogin")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastSeen")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -112,6 +171,10 @@ namespace MusicMessage.Models.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_Message_User1");
 
+                    b.HasOne("MusicMessage.Models.Message", "ReplyToMessage")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId");
+
                     b.HasOne("MusicMessage.Models.User", "Sender")
                         .WithMany("MessageSenders")
                         .HasForeignKey("SenderId")
@@ -120,7 +183,33 @@ namespace MusicMessage.Models.Migrations
 
                     b.Navigation("Receiver");
 
+                    b.Navigation("ReplyToMessage");
+
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("MusicMessage.Models.Reaction", b =>
+                {
+                    b.HasOne("MusicMessage.Models.Message", "Message")
+                        .WithMany("MessageReactions")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MusicMessage.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("MusicMessage.Models.Message", b =>
+                {
+                    b.Navigation("MessageReactions");
                 });
 
             modelBuilder.Entity("MusicMessage.Models.User", b =>

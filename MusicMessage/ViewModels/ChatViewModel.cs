@@ -25,10 +25,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 using MusicMessage.UserCtrls;
 
 using MusicMessage.Repository;
+using Microsoft.Extensions.DependencyInjection;
 namespace MusicMessage.ViewModels
 {
 	public class ChatViewModel : INotifyPropertyChanged
 	{
+		public ObservableCollection<Message> Messages { get; } = new ObservableCollection<Message>();
 		private readonly IMessageRepository _messageRepository;
 		private readonly IAuthService _authService; // Добавляем сервис аутентификации
 		private string _messageText;
@@ -39,7 +41,7 @@ namespace MusicMessage.ViewModels
 		private bool _isPreviewPlaying;
 		private MediaPlayer _previewPlayer;
 		private DispatcherTimer _previewTimer;
-
+		public event Action ScrollToLastRequested;
 		[NotMapped]
 		public bool IsPreviewPlaying
 		{
@@ -103,17 +105,34 @@ namespace MusicMessage.ViewModels
 		public bool IsRecordingOrStopped => IsRecording || IsRecordingStopped;
 
 		[NotMapped]
-		public bool ShowTextInput => !IsRecordingOrStopped; 
+		public bool ShowTextInput => !IsRecordingOrStopped;
 
 		[NotMapped]
 		public bool ShowVoiceControls => !IsRecordingStopped;
 		private DispatcherTimer _waveformUpdateTimer;
 		[NotMapped]
 		public int CurrentUserId => _authService.CurrentUser?.UserId ?? 0;
-		private int _currentReceiverId = 1003;
+		private int _currentReceiverId;
+		public int CurrentReceiverId
+		{
+			get => _currentReceiverId;
+			set
+			{
+				if (_currentReceiverId == value) return;
+
+				_currentReceiverId = value;
+				OnPropertyChanged();
+
+				// Загружаем сообщения только если ID валидный
+				if (_currentReceiverId > 0)
+				{
+					_ = LoadMessagesAsync();
+				}
+			}
+		}
 		[NotMapped]
 		public bool ShowSendTextButton => ShowTextInput && !string.IsNullOrWhiteSpace(MessageText) && !IsEditing;
-		public ObservableCollection<Message> Messages { get; } = new ObservableCollection<Message>();
+
 		public string MessageText
 		{
 			get => _messageText;
@@ -195,10 +214,10 @@ namespace MusicMessage.ViewModels
 		public ICommand ConfirmEditCommand { get; private set; }
 		public ICommand CancelEditCommand { get; private set; }
 		public ICommand ToggleReactionCommand { get; private set; }
-
+		public ICommand LoadedCommand { get; }
 		public ChatViewModel(IMessageRepository messageRepository, IAuthService authService)
 		{
-			
+
 			_messageRepository = messageRepository;
 			_authService = authService;
 			if (!_authService.IsLoggedIn)
@@ -230,6 +249,7 @@ namespace MusicMessage.ViewModels
 			ConfirmEditCommand = new RelayCommand(ConfirmEdit, CanConfirmEdit);
 			CancelEditCommand = new RelayCommand(CancelEdit);
 			ToggleReactionCommand = new RelayCommand<object>(ToggleReaction);
+			LoadedCommand = new RelayCommand(async () => await LoadMessagesAsync());
 			_recordingTimer = new DispatcherTimer
 			{
 				Interval = TimeSpan.FromSeconds(1)
@@ -264,16 +284,20 @@ namespace MusicMessage.ViewModels
 			_previewTimer.Tick += (s, e) => UpdatePreviewProgress();
 
 			_previewPlayer.MediaEnded += (s, e) => StopPreview();
-			_ = InitializeAsync();
+			Task.Run(async () => await LoadMessagesAsync());
 		}
-		private async Task InitializeAsync()
-		{
-			await LoadMessagesAsync();
-			// Другие асинхронные операции инициализации
-		}
+		//private async Task InitializeAsync()
+		//{
+		//	await LoadMessagesAsync();
+		//	// Другие асинхронные операции инициализации
+		//}
 
 		private bool CanSend() => !string.IsNullOrWhiteSpace(MessageText);
-
+		public async Task LoadMessagesForCurrentReceiverAsync()
+		{
+			if (_currentReceiverId == 0) return;
+			await LoadMessagesAsync();
+		}
 		private async void SendTextMessage()
 		{
 			if (IsEditing)
@@ -287,20 +311,7 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
-				var newMessage = new Message
-				{
-					ContentMess = MessageText,
-					SenderId = CurrentUserId,
-					ReceiverId = _currentReceiverId,
-					Timestamp = DateTime.Now,
-					MessageType = "Text",
-					Sender = new User { UserName = "Вы" },
-					ReplyToMessageId = SelectedMessageForReply?.MessageId,
-					Reactions = new ObservableCollection<Reaction>(),
-					ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction)
-				};
-
-				// Сохраняем и получаем ID
+				// Сначала сохраняем сообщение в БД чтобы получить MessageId
 				var messageId = await _messageRepository.AddReplyMessageAndGetIdAsync(
 					MessageText,
 					CurrentUserId,
@@ -308,14 +319,43 @@ namespace MusicMessage.ViewModels
 					SelectedMessageForReply?.MessageId
 				);
 
-				// Устанавливаем полученный ID
-				newMessage.MessageId = messageId;
+				// Теперь загружаем полное сообщение из БД с полученным ID
+				var newMessage = await _messageRepository.GetMessageByIdAsync(messageId);
+
+				if (newMessage == null)
+				{
+					MessageBox.Show("Ошибка: сообщение не найдено после сохранения");
+					return;
+				}
+
+				// Инициализируем свойства для UI
+				newMessage.CurrentUserId = CurrentUserId;
+				newMessage.Sender = new User { UserName = "Вы" };
+
+				// ВАЖНО: Инициализируем коллекцию и команду
+				if (newMessage.Reactions == null)
+				{
+					newMessage.Reactions = new ObservableCollection<Reaction>();
+				}
+
+				newMessage.ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction);
+
+				// ВАЖНО: Загружаем полные данные о сообщении-ответе, если есть
+				if (newMessage.ReplyToMessageId.HasValue && newMessage.ReplyToMessage == null)
+				{
+					newMessage.ReplyToMessage = await _messageRepository.GetMessageByIdAsync(
+						newMessage.ReplyToMessageId.Value);
+				}
 
 				MessageText = string.Empty;
 				SelectedMessageForReply = null;
-				newMessage.CurrentUserId = CurrentUserId;
 
+				// ДОБАВЛЯЕМ сообщение в коллекцию и ОБНОВЛЯЕМ UI
 				Messages.Add(newMessage);
+				ScrollToLastRequested?.Invoke();
+				await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
+
+
 			}
 			catch (Exception ex)
 			{
@@ -598,8 +638,8 @@ namespace MusicMessage.ViewModels
 			}
 		}
 
-		
-		
+
+
 
 		private void InitializeVoiceMessagesDirectory()
 		{
@@ -629,15 +669,15 @@ namespace MusicMessage.ViewModels
 			if (buffer == null || buffer.Length == 0)
 				return;
 
-			
+
 			short[] samples = new short[buffer.Length / 2];
 			Buffer.BlockCopy(buffer, 0, samples, 0, buffer.Length);
 
-			
+
 			short maxAmplitude = samples.Max(s => s > 0 ? s : (short)-s);
 
-			
-			double height = maxAmplitude / 32768.0 * 30; 
+
+			double height = maxAmplitude / 32768.0 * 30;
 
 			Application.Current.Dispatcher.Invoke(() =>
 			{
@@ -699,13 +739,14 @@ namespace MusicMessage.ViewModels
 			// Например, для визуализации прогресса прослушивания
 		}
 
-		
+
 		private async void SendRecordedVoice()
 		{
 			if (_recordedAudioData != null && _recordedAudioData.Length > 0)
 			{
 				await SendVoiceMessageAsync(_recordedAudioData, _recordedDuration);
 				ResetRecordingState();
+				ScrollToLastRequested?.Invoke();
 			}
 		}
 
@@ -939,6 +980,7 @@ namespace MusicMessage.ViewModels
 
 				newMessage.CurrentUserId = CurrentUserId;
 				Messages.Add(newMessage);
+				await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
 			}
 			catch (Exception ex)
 			{
@@ -957,7 +999,7 @@ namespace MusicMessage.ViewModels
 				string emoji = null;
 				int messageId = 0;
 				int userId = CurrentUserId;
-				
+
 				if (parameter is object[] parameters && parameters.Length >= 2)
 				{
 					// Вызов из контекстного меню
@@ -994,22 +1036,25 @@ namespace MusicMessage.ViewModels
 				}
 
 				// Перезагружаем реакции из базы
-				var reactionsDict = await _messageRepository.GetReactionsForMessagesAsync(new List<int> { messageId });
+				var allMessageIds = Messages.Select(m => m.MessageId).ToList();
+				var reactionsDict = await GetReactionsForMessagesAsync(allMessageIds);
 
-				if (message != null)
+				await Application.Current.Dispatcher.InvokeAsync(() =>
 				{
-					if (reactionsDict.TryGetValue(messageId, out var updatedReactions))
+					foreach (var msg in Messages)
 					{
-						message.Reactions = new ObservableCollection<Reaction>(updatedReactions);
+						if (reactionsDict.TryGetValue(msg.MessageId, out var updatedReactions))
+						{
+							msg.Reactions = new ObservableCollection<Reaction>(updatedReactions);
+						}
+						else
+						{
+							msg.Reactions = new ObservableCollection<Reaction>();
+						}
+						msg.OnPropertyChanged(nameof(Message.ReactionsSummary));
+						msg.OnPropertyChanged(nameof(Message.Reactions));
 					}
-					else
-					{
-						message.Reactions = new ObservableCollection<Reaction>();
-					}
-
-					message.OnPropertyChanged(nameof(Message.ReactionsSummary));
-					message.OnPropertyChanged(nameof(Message.Reactions));
-				}
+				});
 			}
 			catch (Exception ex)
 			{
@@ -1017,51 +1062,7 @@ namespace MusicMessage.ViewModels
 				MessageBox.Show($"Ошибка при установке реакции: {ex.Message}");
 			}
 		}
-		private async Task LoadMessagesAsync()
-		{
-			try
-			{
-				var messages = (await _messageRepository.GetAllMessagesAsync(CurrentUserId, _currentReceiverId)
-					.ConfigureAwait(false))
-					.Where(m => !m.IsDeletedForEveryone &&
-							   !(m.IsDeletedForSender && m.SenderId == CurrentUserId) &&
-							   !(m.IsDeletedForReceiver && m.ReceiverId == CurrentUserId))
-					.OrderBy(m => m.Timestamp)
-					.ToList();
 
-				await Application.Current.Dispatcher.InvokeAsync(() =>
-				{
-					Messages.Clear();
-
-					foreach (var msg in messages)
-					{
-						msg.MessageType = string.IsNullOrEmpty(msg.AudioPath) ? "Text" : "Voice";
-						msg.CurrentUserId = CurrentUserId;
-
-						// ВАЖНО: Убеждаемся, что коллекция реакций инициализирована
-						if (msg.Reactions == null)
-						{
-							msg.Reactions = new ObservableCollection<Reaction>();
-						}
-
-						// ВАЖНО: Устанавливаем команду для реакций
-						if (msg.ToggleReactionCommand == null)
-						{
-							msg.ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction);
-						}
-
-						Messages.Add(msg);
-					}
-				});
-			}
-			catch (Exception ex)
-			{
-				await Application.Current.Dispatcher.InvokeAsync(() =>
-				{
-					MessageBox.Show($"Ошибка загрузки сообщений: {ex.Message}");
-				});
-			}
-		}
 		private List<double> GenerateRandomWaveform()
 		{
 			var random = new Random();
@@ -1069,31 +1070,184 @@ namespace MusicMessage.ViewModels
 						   .Select(_ => (double)random.Next(5, 25))
 						   .ToList();
 		}
-		private async Task<List<double>> LoadWaveformDataSafe(Message msg)
+		private async Task LoadMessagesAsync()
 		{
 			try
 			{
-				var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, msg.AudioPath);
-				if (!File.Exists(fullPath))
+				using var context = App.ServiceProvider.GetRequiredService<IDbContextFactory<MessangerBaseContext>>().
+					CreateDbContext();
+				var messageRepository = new MessageRepository(App.ServiceProvider.
+					GetRequiredService<IDbContextFactory<MessangerBaseContext>>());
+
+				// 1. СНАЧАЛА получаем непрочитанные сообщения ДО загрузки чата
+				var unreadMessagesToUpdate = await context.Messages
+			   .Where(m => m.SenderId == _currentReceiverId &&
+						  m.ReceiverId == CurrentUserId &&
+						  !m.IsRead &&
+						  !m.IsDeletedForEveryone)
+			   .ToListAsync();
+				// 2. Помечаем как прочитанные
+				if (unreadMessagesToUpdate.Count > 0)
 				{
-					
-					return GenerateRandomWaveform();
+					foreach (var msg in unreadMessagesToUpdate)
+					{
+						msg.IsRead = true;
+					}
+					await context.SaveChangesAsync();
 				}
 
-				var waveformData = await _messageRepository.GetWaveformDataAsync(msg.MessageId);
-				if (waveformData.Count == 0)
+				// 3. ОБНОВЛЯЕМ СЧЕТЧИК в ChatPreviews
+				await UpdateUnreadCountAsync(CurrentUserId, _currentReceiverId);
+
+				// 4. ТЕПЕРЬ загружаем сообщения для отображения
+
+				var messages = await context.Messages
+		   .Include(m => m.Sender)
+		   .Include(m => m.Receiver)
+		   .Include(m => m.MessageReactions) // ВАЖНО: включаем реакции
+			   .ThenInclude(r => r.User)     // и пользователей реакций
+		   .Include(m => m.ReplyToMessage)
+			   .ThenInclude(rm => rm.Sender)
+		   .Where(m => (m.SenderId == CurrentUserId && m.ReceiverId == _currentReceiverId) ||
+					  (m.SenderId == _currentReceiverId && m.ReceiverId == CurrentUserId))
+		   .Where(m => !m.IsDeletedForEveryone &&
+					  !(m.IsDeletedForSender && m.SenderId == CurrentUserId) &&
+					  !(m.IsDeletedForReceiver && m.ReceiverId == CurrentUserId))
+		   .OrderBy(m => m.Timestamp)
+		   .AsNoTracking()
+		   .ToListAsync();
+				var messageIds = messages.Select(m => m.MessageId).ToList();
+				var reactionsDict = await GetReactionsForMessagesAsync(messageIds);
+				// 5. Отображаем сообщения в UI
+				await Application.Current.Dispatcher.InvokeAsync(() =>
 				{
-					waveformData = GenerateWaveformData(fullPath);
-					await _messageRepository.SaveWaveformDataAsync(msg.MessageId, waveformData);
-				}
-				return waveformData;
+					Messages.Clear();
+					foreach (var msg in messages)
+					{
+						msg.MessageType = string.IsNullOrEmpty(msg.AudioPath) ? "Text" : "Voice";
+						msg.CurrentUserId = CurrentUserId;
+						if (reactionsDict.TryGetValue(msg.MessageId, out var messageReactions))
+						{
+							msg.Reactions = new ObservableCollection<Reaction>(messageReactions);
+						}
+						else
+						{
+							msg.Reactions = new ObservableCollection<Reaction>();
+						}
+						if (msg.Sender == null && msg.SenderId > 0)
+						{
+							msg.Sender = new User { UserName = "Unknown Sender" };
+						}
+
+						if (msg.Receiver == null && msg.ReceiverId > 0)
+						{
+							msg.Receiver = new User { UserName = "Unknown Receiver" };
+						}
+
+						if (msg.Reactions == null)
+						{
+							msg.Reactions = new ObservableCollection<Reaction>();
+						}
+
+						if (msg.ToggleReactionCommand == null)
+						{
+							msg.ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction);
+						}
+
+						if (msg.IsVoiceMessage)
+						{
+							msg.WaveformDataList = GenerateRandomWaveform();
+						}
+
+						Messages.Add(msg);
+					}
+					ScrollToLastRequested?.Invoke();
+				});
+
 			}
 			catch (Exception ex)
 			{
-				MessageBox.Show($"Error in LoadWaveformDataSafe: {ex}");
-				return GenerateRandomWaveform();
+				MessageBox.Show($"Ошибка загрузки сообщений: {ex.Message}");
 			}
 		}
+		
+		private async Task<Dictionary<int, List<Reaction>>> GetReactionsForMessagesAsync(List<int> messageIds)
+		{
+			if (messageIds == null || !messageIds.Any())
+				return new Dictionary<int, List<Reaction>>();
+
+			try
+			{
+				using var context = new MessangerBaseContext();
+
+				var reactions = await context.Reactions
+					.Include(r => r.User)
+					.Where(r => messageIds.Contains(r.MessageId))
+					.AsNoTracking()
+					.ToListAsync();
+				return reactions
+					.GroupBy(r => r.MessageId)
+					.ToDictionary(g => g.Key, g => g.ToList());
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Ошибка загрузки реакций: {ex.Message}");
+				return new Dictionary<int, List<Reaction>>();
+			}
+		}
+		private async Task UpdateUnreadCountAsync(int userId, int otherUserId)
+		{
+			try
+			{
+				using var context = new MessangerBaseContext();
+
+				// Правильный подсчет непрочитанных
+				var unreadCount = await context.Messages
+					.CountAsync(m => m.SenderId == otherUserId &&
+								   m.ReceiverId == userId &&
+								   !m.IsRead &&
+								   !m.IsDeletedForEveryone);
+
+				// Находим или создаем ChatPreview
+				var chatPreview = await context.ChatPreviews
+					.FirstOrDefaultAsync(c => c.UserId == userId &&
+											c.OtherUserId == otherUserId);
+
+				if (chatPreview == null)
+				{
+					// Если чата нет - создаем
+					var otherUser = await context.Users.FindAsync(otherUserId);
+					if (otherUser != null)
+					{
+						chatPreview = new ChatPreview
+						{
+							UserId = userId,
+							OtherUserId = otherUserId,
+							OtherUserName = otherUser.UserName,
+							LastMessage = "Чат начат",
+							LastMessageTime = DateTime.Now,
+							UnreadCount = unreadCount
+						};
+						context.ChatPreviews.Add(chatPreview);
+					}
+				}
+				else
+				{
+					// Обновляем существующий
+					chatPreview.UnreadCount = unreadCount;
+				}
+
+				await context.SaveChangesAsync();
+
+			
+
+			}
+			catch (Exception ex)
+			{
+				
+			}
+		}
+
 
 		private List<double> GenerateWaveformData(string audioPath)
 		{
@@ -1132,8 +1286,6 @@ namespace MusicMessage.ViewModels
 				return GenerateRandomWaveform();
 			}
 		}
-
-		
 
 		private void PlayNextVoiceMessage(Message currentMessage)
 		{

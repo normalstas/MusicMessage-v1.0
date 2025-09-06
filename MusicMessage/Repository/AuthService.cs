@@ -18,12 +18,12 @@ namespace MusicMessage.Repository
 	}
 	public class AuthService : IAuthService
 	{
-		private readonly MessangerBaseContext _context;
+		private readonly IDbContextFactory<MessangerBaseContext> _contextFactory;
 		private User _currentUser;
 
-		public AuthService(MessangerBaseContext context)
+		public AuthService(IDbContextFactory<MessangerBaseContext> contextFactory)
 		{
-			_context = context;
+			_contextFactory = contextFactory;
 		}
 
 		public User CurrentUser => _currentUser;
@@ -31,8 +31,9 @@ namespace MusicMessage.Repository
 
 		public async Task<User> LoginAsync(string username, string password)
 		{
+			using var context = _contextFactory.CreateDbContext();
 			// Используем ConfigureAwait(false) для операций с БД
-			var user = await _context.Users
+			var user = await context.Users
 				.FirstOrDefaultAsync(u => u.UserName == username)
 				.ConfigureAwait(false);
 
@@ -47,15 +48,16 @@ namespace MusicMessage.Repository
 			user.LastLogin = DateTime.UtcNow;
 
 			// Сохраняем изменения асинхронно
-			await _context.SaveChangesAsync().ConfigureAwait(false);
+			await context.SaveChangesAsync().ConfigureAwait(false);
 
 			return user;
 		}
 
 		public async Task<User> RegisterAsync(string username, string email, string password)
 		{
+			using var context = _contextFactory.CreateDbContext();
 			// Проверка на существующего пользователя
-			if (await _context.Users.AnyAsync(u => u.UserName == username || u.Email == email))
+			if (await context.Users.AnyAsync(u => u.UserName == username || u.Email == email))
 				return null;
 
 			var newUser = new User
@@ -66,8 +68,8 @@ namespace MusicMessage.Repository
 				CreatedAt = DateTime.UtcNow
 			};
 
-			_context.Users.Add(newUser);
-			await _context.SaveChangesAsync();
+			context.Users.Add(newUser);
+			await context.SaveChangesAsync();
 
 			// Не логинимся автоматически после регистрации?
 			// _currentUser = newUser;

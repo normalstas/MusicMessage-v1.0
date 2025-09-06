@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using MusicMessage.Models;
 using MusicMessage.Repository;
 using System;
@@ -18,48 +19,59 @@ namespace MusicMessage.ViewModels
 		private object _currentView;
 
 		private readonly IAuthService _authService;
-		private readonly Func<ChatViewModel> _createChatViewModel;
 		private readonly LoginViewModel _loginViewModel;
+		private readonly IServiceProvider _serviceProvider;
 
-		public ICommand ShowChatCommand { get; }
+		[ObservableProperty]
+		private bool _isLoggedIn;
 
-		public NavigationViewModel(IAuthService authService, LoginViewModel loginViewModel, Func<ChatViewModel> createChatViewModel)
+		public NavigationViewModel(IAuthService authService, LoginViewModel loginViewModel, IServiceProvider serviceProvider)
 		{
 			_authService = authService;
 			_loginViewModel = loginViewModel;
-			_createChatViewModel = createChatViewModel;
+			_serviceProvider = serviceProvider;
+			_isLoggedIn = _authService.IsLoggedIn;
 
-			// Подписываемся на событие успешного входа
-			_loginViewModel.OnLoginSuccessful += ShowChats;
-
+			_loginViewModel.OnLoginSuccessful += OnLoginSuccessful;
 			CurrentView = _loginViewModel;
-			ShowChatCommand = new RelayCommand(ShowChats);
 		}
 
-		public async void ShowChats()
+		private void OnLoginSuccessful()
 		{
-			try
-			{
-				if (_authService.IsLoggedIn)
-				{
-					// Создаем ChatViewModel асинхронно
-					var chatVM = _createChatViewModel();
+			IsLoggedIn = true;
+			ShowChatsList();
+		}
 
-					// Даем время на инициализацию
-					await Task.Delay(100);
+		private void ShowChatsList()
+		{
+			ShowChats();
+		}
 
-					CurrentView = chatVM;
-				}
-				else
-				{
-					CurrentView = _loginViewModel;
-					MessageBox.Show("Сначала войдите в систему");
-				}
-			}
-			catch (Exception ex)
+		private async void OnChatSelected(int receiverId)
+		{
+			var chatViewModel = _serviceProvider.GetService<ChatViewModel>();
+			chatViewModel.CurrentReceiverId = receiverId;
+
+			await chatViewModel.LoadMessagesForCurrentReceiverAsync();
+			CurrentView = chatViewModel;
+			await Task.Delay(50);
+		}
+		[RelayCommand]
+		private void ShowChats()
+		{
+			if (_authService.IsLoggedIn)
 			{
-				MessageBox.Show($"Ошибка перехода к чату: {ex.Message}");
+				var chatsListVM = _serviceProvider.GetService<ChatsListViewModel>();
+				if (chatsListVM != null)
+				{
+					chatsListVM.OnChatSelected += OnChatSelected;
+					CurrentView = chatsListVM;
+
+					// ОБНОВЛЯЕМ чаты при переходе
+					_ = chatsListVM.LoadChatsAsync();
+				}
 			}
 		}
 	}
+
 }
