@@ -1,0 +1,245 @@
+﻿<UserControl x:Class="MusicMessage.UserCtrls.FriendsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MusicMessage.UserCtrls"
+             xmlns:conv="clr-namespace:MusicMessage.Converter"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
+        <conv:FriendshipStatusToColorConverter x:Key="FriendshipStatusToColorConverter"/>
+        <conv:FriendshipStatusToVisibilityConverter x:Key="FriendshipStatusToVisibilityConverter"/>
+        <Style x:Key="FriendItemStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="2"/>
+        </Style>
+
+        <Style x:Key="OnlineIndicator" TargetType="Ellipse">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Height" Value="10"/>
+            <Setter Property="Fill" Value="Green"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="5,0,0,0"/>
+        </Style>
+        <Style x:Key="PlaceholderTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <TextBlock x:Name="placeholderTextBlock" 
+                                   Text="Поиск пользователей..." 
+                                   Foreground="Gray" 
+                                   Margin="5,0"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+                            <ScrollViewer x:Name="PART_ContentHost" 
+                                      VerticalAlignment="Center"
+                                      Margin="2,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="placeholderTextBlock" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="placeholderTextBlock" Property="Visibility" Value="Collapsed"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок и навигация -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
+            <TextBlock Text="Друзья" FontSize="16" FontWeight="Bold"/>
+        </StackPanel>
+
+        <!-- Поиск -->
+        <Grid Grid.Row="1" Margin="10,0,10,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBox Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
+         Style="{StaticResource PlaceholderTextBoxStyle}"
+         Margin="0,0,5,0"/>
+
+            <Button Grid.Column="1" Content="Найти" Command="{Binding SearchUsersCommand}"/>
+        </Grid>
+
+        <!-- Навигационные вкладки -->
+        <TabControl Grid.Row="2">
+            <TabItem Header="Все друзья">
+                <ListView ItemsSource="{Binding Friends}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource FriendItemStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Аватар -->
+                                    <Ellipse Width="40" Height="40" Fill="LightBlue"/>
+
+                                    <!-- Информация -->
+                                    <StackPanel Grid.Column="1" Margin="10,0">
+                                        <TextBlock Text="{Binding UserName}" FontWeight="Bold"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="В сети" Foreground="Green" 
+                                                       Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <TextBlock Text="Не в сети" Foreground="Gray"
+                                                       Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Действия -->
+                                    <Button Content="Написать" 
+        Command="{Binding DataContext.StartChatCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+        CommandParameter="{Binding}" Grid.Column="2"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </TabItem>
+
+            <TabItem Header="Заявки в друзья">
+                <ListView ItemsSource="{Binding FriendRequests}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource FriendItemStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Ellipse Width="40" Height="40" Fill="LightBlue"/>
+
+                                    <StackPanel Grid.Column="1" Margin="10,0">
+                                        <TextBlock Text="{Binding Requester.UserName}" FontWeight="Bold"/>
+                                        <TextBlock Text="Хочет добавить вас в друзья" Foreground="Gray"/>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="2" Content="Принять" Margin="0,0,5,0"
+                                            Command="{Binding DataContext.AcceptFriendRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+
+                                    <Button Grid.Column="3" Content="Отклонить"
+                                            Command="{Binding DataContext.RejectFriendRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </TabItem>
+
+            <TabItem Header="Поиск">
+                <ListView ItemsSource="{Binding SearchResults}">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource FriendItemStyle}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Аватар -->
+                                    <Ellipse Width="40" Height="40" Fill="LightBlue"/>
+
+                                    <!-- Информация -->
+                                    <StackPanel Grid.Column="1" Margin="10,0">
+                                        <TextBlock Text="{Binding UserName}" FontWeight="Bold"/>
+
+                                        <!-- Статус дружбы -->
+                                        <TextBlock Text="{Binding FriendshipStatusText}" 
+                                   Foreground="{Binding FriendshipStatus, Converter={StaticResource FriendshipStatusToColorConverter}}"
+                                   FontSize="11"/>
+
+                                        <!-- Онлайн статус -->
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="8" Height="8" Fill="Green" Margin="0,0,5,0"
+                                   Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <TextBlock Text="В сети" Foreground="Green" FontSize="10"
+                                   Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <TextBlock Text="Не в сети" Foreground="Gray" FontSize="10"
+                                   Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Кнопки действий -->
+                                    <StackPanel Grid.Column="2" Orientation="Vertical" Margin="5,0">
+                                        <!-- Кнопка добавления в друзья -->
+                                        <Button Content="Добавить" 
+                               Command="{Binding DataContext.SendFriendRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               CommandParameter="{Binding}"
+                               Visibility="{Binding FriendshipStatus, Converter={StaticResource FriendshipStatusToVisibilityConverter}, ConverterParameter=Null}"
+                               Margin="0,2"
+                               Padding="10,2"
+                               FontSize="11"/>
+
+                                        <!-- Кнопка отмены заявки -->
+                                        <Button Content="Отменить заявку" 
+                               Command="{Binding DataContext.CancelFriendRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               CommandParameter="{Binding}"
+                               Visibility="{Binding FriendshipStatus, Converter={StaticResource FriendshipStatusToVisibilityConverter}, ConverterParameter=Pending}"
+                               Margin="0,2"
+                               Padding="10,2"
+                               FontSize="11"
+                               Background="LightGray"/>
+
+                                        <!-- Кнопка написания сообщения другу -->
+                                        <Button Content="Написать" 
+        Command="{Binding DataContext.StartChatCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+        CommandParameter="{Binding}"
+                               Visibility="{Binding FriendshipStatus, Converter={StaticResource FriendshipStatusToVisibilityConverter}, ConverterParameter=Accepted}"
+                               Margin="0,2"
+                               Padding="10,2"
+                               FontSize="11"
+                               Background="LightBlue"/>
+
+                                        <!-- Кнопка разблокировки -->
+                                        <Button Content="Разблокировать" 
+                               Command="{Binding DataContext.UnblockUserCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                               CommandParameter="{Binding}"
+                               Visibility="{Binding FriendshipStatus, Converter={StaticResource FriendshipStatusToVisibilityConverter}, ConverterParameter=Blocked}"
+                               Margin="0,2"
+                               Padding="10,2"
+                               FontSize="11"
+                               Background="LightCoral"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </TabItem>
+        </TabControl>
+
+        <!-- Индикатор загрузки -->
+        <ProgressBar Grid.Row="2" Height="5" IsIndeterminate="{Binding IsLoading}" 
+                   VerticalAlignment="Top"/>
+    </Grid>
+</UserControl>

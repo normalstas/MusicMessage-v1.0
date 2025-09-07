@@ -20,14 +20,20 @@ namespace MusicMessage
 			ConfigureServices(serviceCollection);
 
 			ServiceProvider = serviceCollection.BuildServiceProvider();
-
+			var friendsViewModel = ServiceProvider.GetService<FriendsViewModel>();
+			var navigationViewModel = new NavigationViewModel(
+				ServiceProvider.GetService<IAuthService>(),
+				ServiceProvider.GetService<LoginViewModel>(),
+				ServiceProvider,
+				friendsViewModel
+			);
 			var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
 			mainWindow.Show();
 		}
 
 		private void ConfigureServices(IServiceCollection services)
 		{
-			// ИЗМЕНИТЕ на Transient и добавьте фабрику контекста
+			
 			services.AddDbContextFactory<MessangerBaseContext>(options =>
 	   options.UseSqlServer("Server=localhost; Database=MessangerBase; Trusted_Connection=True; MultipleActiveResultSets=true; TrustServerCertificate=true;encrypt=false"),
 	   ServiceLifetime.Transient);
@@ -36,7 +42,8 @@ namespace MusicMessage
 			// Измените репозитории на Transient
 			services.AddTransient<IMessageRepository, MessageRepository>();
 			services.AddTransient<IChatRepository, ChatRepository>();
-
+			services.AddTransient<IFriendsRepository, FriendsRepository>();
+			services.AddScoped<FriendsViewModel>();
 			services.AddScoped<LoginViewModel>();
 			services.AddScoped<NavigationViewModel>();
 			services.AddScoped<ChatsListViewModel>();

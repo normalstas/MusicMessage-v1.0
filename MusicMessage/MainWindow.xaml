@@ -20,6 +20,9 @@
         <DataTemplate DataType="{x:Type vm:ChatsListViewModel}">
             <us:ChatsListView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:FriendsViewModel}">
+            <us:FriendsView/>
+        </DataTemplate>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </Window.Resources>
     <Grid>
@@ -38,16 +41,9 @@
             </ColumnDefinition>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
         <!-- Кнопка чата - видна только после авторизации -->
-       
-        <Button Content="Чаты" 
-        Command="{Binding ShowChatsCommand}" 
-        Grid.Column="0"
-        Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}"
-        Margin="5"
-        Height="30"
-        VerticalAlignment="Top"/>
+
+
         <!-- Thumb для изменения размера - тоже скрываем -->
         <Grid Grid.Column="0"
               Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -56,6 +52,23 @@
                    Background="#FFBBBBBB"
                    Cursor="SizeWE"
                    DragDelta="Thumb_DragDelta"/>
+
+            <StackPanel Grid.Column="0" 
+            Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}">
+
+                <!-- Кнопка Чаты -->
+                <Button Content="Чаты" 
+            Command="{Binding ShowChatsCommand}" 
+            Margin="5"
+            Height="30"/>
+
+                <!-- Кнопка Друзья -->
+                <Button Content="Друзья" 
+            Command="{Binding ShowFriendsCommand}" 
+            Margin="5"
+            Height="30"/>
+
+            </StackPanel>
         </Grid>
 
         <ContentControl Grid.Column="1" 

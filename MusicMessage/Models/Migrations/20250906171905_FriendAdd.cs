@@ -11,27 +11,7 @@ namespace MusicMessage.Models.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ChatPreviews_User_OtherUserId",
-                table: "ChatPreviews");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_ChatPreviews_User_UserId",
-                table: "ChatPreviews");
-
-            migrationBuilder.DropIndex(
-                name: "IX_ChatPreviews_UserId",
-                table: "ChatPreviews");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "UnreadCount",
-                table: "ChatPreviews",
-                type: "int",
-                nullable: false,
-                defaultValue: 0,
-                oldClrType: typeof(int),
-                oldType: "int");
-
+           
             migrationBuilder.CreateTable(
                 name: "Friendships",
                 columns: table => new
@@ -59,85 +39,16 @@ namespace MusicMessage.Models.Migrations
                         principalColumn: "UserId");
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ChatPreviews_UserId_OtherUserId",
-                table: "ChatPreviews",
-                columns: new[] { "UserId", "OtherUserId" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Friendships_AddresseeId",
-                table: "Friendships",
-                column: "AddresseeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Friendships_RequesterId_AddresseeId",
-                table: "Friendships",
-                columns: new[] { "RequesterId", "AddresseeId" },
-                unique: true);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ChatPreviews_User_OtherUserId",
-                table: "ChatPreviews",
-                column: "OtherUserId",
-                principalTable: "User",
-                principalColumn: "UserId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ChatPreviews_User_UserId",
-                table: "ChatPreviews",
-                column: "UserId",
-                principalTable: "User",
-                principalColumn: "UserId");
+           
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ChatPreviews_User_OtherUserId",
-                table: "ChatPreviews");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_ChatPreviews_User_UserId",
-                table: "ChatPreviews");
-
+           
             migrationBuilder.DropTable(
                 name: "Friendships");
 
-            migrationBuilder.DropIndex(
-                name: "IX_ChatPreviews_UserId_OtherUserId",
-                table: "ChatPreviews");
-
-            migrationBuilder.AlterColumn<int>(
-                name: "UnreadCount",
-                table: "ChatPreviews",
-                type: "int",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "int",
-                oldDefaultValue: 0);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ChatPreviews_UserId",
-                table: "ChatPreviews",
-                column: "UserId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ChatPreviews_User_OtherUserId",
-                table: "ChatPreviews",
-                column: "OtherUserId",
-                principalTable: "User",
-                principalColumn: "UserId",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ChatPreviews_User_UserId",
-                table: "ChatPreviews",
-                column: "UserId",
-                principalTable: "User",
-                principalColumn: "UserId",
-                onDelete: ReferentialAction.Cascade);
         }
     }
 }
