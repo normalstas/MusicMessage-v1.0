@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MusicMessage.Models;
 
@@ -11,9 +12,11 @@ using MusicMessage.Models;
 namespace MusicMessage.Models.Migrations
 {
     [DbContext(typeof(MessangerBaseContext))]
-    partial class MessangerBaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250917181427_UserProfileAatar")]
+    partial class UserProfileAatar
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -35,11 +38,6 @@ namespace MusicMessage.Models.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("LastMessage")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -47,11 +45,6 @@ namespace MusicMessage.Models.Migrations
 
                     b.Property<DateTime>("LastMessageTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("OtherUserId")
                         .HasColumnType("int");

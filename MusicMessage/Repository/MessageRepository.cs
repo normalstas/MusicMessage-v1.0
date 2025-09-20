@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MusicMessage.Models;
+using System.IO;
 namespace MusicMessage.Repository
 {
 	public interface IMessageRepository
@@ -33,6 +34,7 @@ namespace MusicMessage.Repository
 		Task<int> AddReplyMessageAndGetIdAsync(string text, int senderId, int receiverId, int? replyToMessageId);
 		Task<Dictionary<int, List<Reaction>>> GetReactionsForMessagesAsync(List<int> messageIds);
 		Task UpdateMessageReadStatusAsync(int messageId, bool isRead);
+		Task DeleteAllMessagesForEveryoneAsync(int userId, int otherUserId);
 	}
 
 	public class MessageRepository : IMessageRepository
@@ -185,6 +187,39 @@ namespace MusicMessage.Repository
 				await context.SaveChangesAsync();
 			}
 		}
+		public async Task DeleteAllMessagesForEveryoneAsync(int userId, int otherUserId)
+		{
+			using var context = _contextFactory.CreateDbContext();
+
+			var messagesToDelete = await context.Messages
+				.Where(m => (m.SenderId == userId && m.ReceiverId == otherUserId) ||
+						   (m.SenderId == otherUserId && m.ReceiverId == userId))
+				.ToListAsync();
+
+			foreach (var message in messagesToDelete)
+			{
+				message.IsDeletedForEveryone = true;
+
+				// Для голосовых сообщений удаляем файлы
+				if (message.IsVoiceMessage && !string.IsNullOrEmpty(message.AudioPath))
+				{
+					try
+					{
+						var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, message.AudioPath);
+						if (File.Exists(fullPath))
+						{
+							File.Delete(fullPath);
+						}
+					}
+					catch
+					{
+						// Игнорируем ошибки удаления файла
+					}
+				}
+			}
+
+			await context.SaveChangesAsync();
+		}
 		public async Task AddOrUpdateReactionAsync(int messageId, int userId, string emoji)
 		{
 			using var context = _contextFactory.CreateDbContext();
@@ -255,7 +290,7 @@ namespace MusicMessage.Repository
 			await context.Messages.AddAsync(message);
 			await context.SaveChangesAsync();
 		}
-
+		
 		public async Task UpdateMessageAsync(Message message)
 		{
 			using var context = _contextFactory.CreateDbContext();

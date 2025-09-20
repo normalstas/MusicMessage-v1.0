@@ -11,7 +11,7 @@ namespace MusicMessage.Repository
 	public interface IAuthService
 	{
 		Task<User> LoginAsync(string username, string password);
-		Task<User> RegisterAsync(string username, string email, string password);
+		Task<User> RegisterAsync(string username, string email, string password, string firstname, string lastname);
 		void Logout();
 		User CurrentUser { get; }
 		bool IsLoggedIn { get; }
@@ -53,7 +53,7 @@ namespace MusicMessage.Repository
 			return user;
 		}
 
-		public async Task<User> RegisterAsync(string username, string email, string password)
+		public async Task<User> RegisterAsync(string username, string email, string password, string firstname,string lastname)
 		{
 			using var context = _contextFactory.CreateDbContext();
 			// Проверка на существующего пользователя
@@ -65,6 +65,8 @@ namespace MusicMessage.Repository
 				UserName = username,
 				Email = email,
 				PasswordHash = HashPassword(password),
+				FirstName = firstname,
+				LastName = lastname,
 				CreatedAt = DateTime.UtcNow
 			};
 

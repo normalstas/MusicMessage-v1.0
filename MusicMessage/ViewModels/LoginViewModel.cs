@@ -26,7 +26,10 @@ namespace MusicMessage.ViewModels
 
 		[ObservableProperty]
 		private string _email;
-
+		[ObservableProperty]
+		private string _firstname;
+		[ObservableProperty]
+		private string _lastname;
 		[ObservableProperty]
 		private bool _isLoginMode = true;
 
@@ -78,13 +81,15 @@ namespace MusicMessage.ViewModels
 		[RelayCommand]
 		private async Task Register()
 		{
-			if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password) || string.IsNullOrWhiteSpace(Email))
+			if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password)
+				|| string.IsNullOrWhiteSpace(Email) ||
+				(string.IsNullOrWhiteSpace(Firstname) || string.IsNullOrWhiteSpace(Lastname)))
 			{
 				MessageBox.Show("Заполните все поля");
 				return;
 			}
 
-			var user = await _authService.RegisterAsync(Username, Email, Password);
+			var user = await _authService.RegisterAsync(Username, Email, Password, Firstname, Lastname);
 			if (user != null)
 			{
 				MessageBox.Show("Регистрация успешна! Теперь вы можете войти.");

@@ -10,6 +10,7 @@
     <UserControl.Resources>
         <conv:IntToVisibilityConverter x:Key="IntToVisibilityConverter"/>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <conv:AvatarPathToImageConverter x:Key="AvatarPathToImageConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -59,8 +60,13 @@
                             </Grid.ColumnDefinitions>
 
                             <!-- Аватар -->
-                            <Ellipse Grid.Column="0" Width="40" Height="40" Fill="LightBlue" 
-                           Margin="0,0,10,0"/>
+                            <Border Width="40" Height="40" CornerRadius="50" Background="White" Padding="2">
+                                <Ellipse>
+                                    <Ellipse.Fill>
+                                        <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" Stretch="UniformToFill"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                            </Border>
 
                             <!-- Информация о чате -->
                             <Grid Grid.Column="1" HorizontalAlignment="Stretch">
@@ -69,8 +75,11 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                <TextBlock Grid.Row="0" Text="{Binding OtherUserName}" 
-             FontWeight="Bold" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Grid.Row="0" FontWeight="Bold" TextTrimming="CharacterEllipsis">
+                                     <Run Text="{Binding FirstName}" />
+                                     <Run Text=" " />
+                                     <Run Text="{Binding LastName}" />
+                                </TextBlock>
                                 <TextBlock Grid.Row="1" Text="{Binding LastMessage}" 
              TextTrimming="CharacterEllipsis" Foreground="Gray"/>
                             </Grid>

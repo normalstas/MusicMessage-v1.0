@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MusicMessage.Models;
 
@@ -11,9 +12,11 @@ using MusicMessage.Models;
 namespace MusicMessage.Models.Migrations
 {
     [DbContext(typeof(MessangerBaseContext))]
-    partial class MessangerBaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250919140533_FIOChats")]
+    partial class FIOChats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

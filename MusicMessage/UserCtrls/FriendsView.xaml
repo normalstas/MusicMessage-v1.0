@@ -11,6 +11,7 @@
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <conv:StringToVisibilityConverter x:Key="StringToVisibilityConverter"/>
         <conv:FriendshipStatusToColorConverter x:Key="FriendshipStatusToColorConverter"/>
+        <conv:AvatarPathToImageConverter x:Key="AvatarPathToImageConverter"/>
         <conv:FriendshipStatusToVisibilityConverter x:Key="FriendshipStatusToVisibilityConverter"/>
         <Style x:Key="FriendItemStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
@@ -18,7 +19,7 @@
             <Setter Property="Padding" Value="10"/>
             <Setter Property="Margin" Value="2"/>
         </Style>
-
+        
         <Style x:Key="OnlineIndicator" TargetType="Ellipse">
             <Setter Property="Width" Value="10"/>
             <Setter Property="Height" Value="10"/>
@@ -93,10 +94,18 @@
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!--Аватар -->
                                     </Grid.ColumnDefinitions>
-
-                                    <!-- Аватар -->
-                                    <Ellipse Width="40" Height="40" Fill="LightBlue"/>
+                                    <Border Width="40" Height="40" CornerRadius="50" Background="White" Padding="2">
+                                        <Ellipse>
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" Stretch="UniformToFill"/>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                    </Border>
+                      
+                                    
 
                                     <!-- Информация -->
                                     <StackPanel Grid.Column="1" Margin="10,0">
@@ -113,6 +122,10 @@
                                     <Button Content="Написать" 
         Command="{Binding DataContext.StartChatCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
         CommandParameter="{Binding}" Grid.Column="2"/>
+                                    <Button Content="Профиль" 
+                        Command="{Binding DataContext.ShowProfileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}" 
+                        Grid.Column="3"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -133,7 +146,13 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
-                                    <Ellipse Width="40" Height="40" Fill="LightBlue"/>
+                                    <Border Width="40" Height="40" CornerRadius="50" Background="White" Padding="2">
+                                        <Ellipse>
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" Stretch="UniformToFill"/>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                    </Border>
 
                                     <StackPanel Grid.Column="1" Margin="10,0">
                                         <TextBlock Text="{Binding Requester.UserName}" FontWeight="Bold"/>
@@ -147,6 +166,7 @@
                                     <Button Grid.Column="3" Content="Отклонить"
                                             Command="{Binding DataContext.RejectFriendRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"/>
+                                    
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -167,8 +187,13 @@
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Аватар -->
-                                    <Ellipse Width="40" Height="40" Fill="LightBlue"/>
-
+                                    <Border Width="40" Height="40" CornerRadius="50" Background="White" Padding="2">
+                                        <Ellipse>
+                                            <Ellipse.Fill>
+                                                <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" Stretch="UniformToFill"/>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                    </Border>
                                     <!-- Информация -->
                                     <StackPanel Grid.Column="1" Margin="10,0">
                                         <TextBlock Text="{Binding UserName}" FontWeight="Bold"/>

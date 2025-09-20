@@ -82,14 +82,17 @@ namespace MusicMessage.ViewModels
 			}
 			catch (Exception ex)
 			{
-				 MessageBox.Show($"Ошибка загрузки чатов: {ex.Message}");
+				// Более информативное сообщение об ошибке
+				MessageBox.Show($"Ошибка загрузки чатов: {ex.Message}\n\n" +
+							   "Это может быть связано с параллельными изменениями в базе данных. " +
+							   "Попробуйте обновить список чатов.");
+				Debug.WriteLine($"LoadChatsAsync error: {ex.Message}");
 			}
 			finally
 			{
 				IsLoading = false;
 			}
 		}
-
 		[RelayCommand]
 		private void OpenChat(ChatPreview chat)
 		{

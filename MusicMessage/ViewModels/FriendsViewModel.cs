@@ -20,6 +20,7 @@ namespace MusicMessage.ViewModels
 		private readonly IAuthService _authService;
 		private readonly IChatRepository _chatRepository;
 		public event Action<int> OnChatRequested;
+		public event Action<int> OnProfileRequested;
 		[ObservableProperty]
 		private ObservableCollection<UserSearchResult> _searchResults = new();
 
@@ -105,7 +106,39 @@ namespace MusicMessage.ViewModels
 				MessageBox.Show($"Ошибка: {ex.Message}");
 			}
 		}
+		[RelayCommand]
+		private void ShowProfile(object parameter)
+		{
+			try
+			{
+				int userId = 0;
 
+				if (parameter is User user)
+				{
+					userId = user.UserId;
+				}
+				else if (parameter is UserSearchResult userSearchResult)
+				{
+					userId = userSearchResult.UserId;
+				}
+				else if (parameter is Friendship friendship)
+				{
+					userId = friendship.RequesterId == _authService.CurrentUser.UserId
+						? friendship.AddresseeId
+						: friendship.RequesterId;
+				}
+
+				if (userId > 0)
+				{
+					// Вызываем событие для перехода в профиль
+					OnProfileRequested?.Invoke(userId);
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Ошибка открытия профиля: {ex.Message}");
+			}
+		}
 		[RelayCommand]
 		private async Task UnblockUser(UserSearchResult user)
 		{
@@ -307,14 +340,8 @@ namespace MusicMessage.ViewModels
 
 				if (userId > 0)
 				{
-					// Создаем или получаем чат
-					var chatPreview = await _chatRepository.GetOrCreateChatAsync(
-						_authService.CurrentUser.UserId,
-						userId
-					);
-
-					// Обновляем список чатов
-					await LoadFriendsData();
+					// НЕ создаем чат заранее, только переходим к нему
+					// Чат создастся автоматически при отправке первого сообщения
 
 					// Вызываем событие для перехода в чат
 					OnChatRequested?.Invoke(userId);

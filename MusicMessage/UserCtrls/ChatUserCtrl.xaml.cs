@@ -247,7 +247,7 @@ namespace MusicMessage.UserCtrls
 				ToolTip = "Сообщение удалится у всех участников чата",
 				Style = (Style)FindResource("DeleteForAllMenuItemStyle") // Применяем стиль
 			};
-
+			
 			contextMenu.Items.Add(deleteForMeItem);
 			contextMenu.Items.Add(deleteForEveryoneItem);
 			contextMenu.Items.Add(new Separator());

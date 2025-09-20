@@ -23,6 +23,12 @@
         <DataTemplate DataType="{x:Type vm:FriendsViewModel}">
             <us:FriendsView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ProfileViewModel}">
+            <us:ProfileView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:EditProfileViewModel}">
+            <us:EditProfileView/>
+        </DataTemplate>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </Window.Resources>
     <Grid>
@@ -55,7 +61,10 @@
 
             <StackPanel Grid.Column="0" 
             Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}">
-
+                <Button Content="Профиль" 
+                Command="{Binding ShowProfileCommand}" 
+                Margin="5"
+                Height="30"/>
                 <!-- Кнопка Чаты -->
                 <Button Content="Чаты" 
             Command="{Binding ShowChatsCommand}" 
@@ -67,7 +76,7 @@
             Command="{Binding ShowFriendsCommand}" 
             Margin="5"
             Height="30"/>
-
+               
             </StackPanel>
         </Grid>
 

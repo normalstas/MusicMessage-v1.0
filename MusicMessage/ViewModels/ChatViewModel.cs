@@ -26,6 +26,7 @@ using MusicMessage.UserCtrls;
 
 using MusicMessage.Repository;
 using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Media.Imaging;
 namespace MusicMessage.ViewModels
 {
 	public class ChatViewModel : INotifyPropertyChanged
@@ -42,6 +43,20 @@ namespace MusicMessage.ViewModels
 		private MediaPlayer _previewPlayer;
 		private DispatcherTimer _previewTimer;
 		public event Action ScrollToLastRequested;
+		private ChatHeaderViewModel _chatHeader;
+		private DispatcherTimer _typingTimer;
+		public ChatHeaderViewModel ChatHeader
+		{
+			get => _chatHeader;
+			set
+			{
+				if (_chatHeader != value)
+				{
+					_chatHeader = value;
+					OnPropertyChanged(nameof(ChatHeader));
+				}
+			}
+		}
 		[NotMapped]
 		public bool IsPreviewPlaying
 		{
@@ -122,6 +137,13 @@ namespace MusicMessage.ViewModels
 
 				_currentReceiverId = value;
 				OnPropertyChanged();
+
+				// Сбрасываем шапку перед загрузкой новых сообщений
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					ChatHeader.OtherUser = null;
+					ChatHeader.AvatarImage = null;
+				});
 
 				// Загружаем сообщения только если ID валидный
 				if (_currentReceiverId > 0)
@@ -215,6 +237,11 @@ namespace MusicMessage.ViewModels
 		public ICommand CancelEditCommand { get; private set; }
 		public ICommand ToggleReactionCommand { get; private set; }
 		public ICommand LoadedCommand { get; }
+		public ICommand BackCommand { get; }
+		public ICommand VoiceCallCommand { get; }
+		public ICommand VideoCallCommand { get; }
+		public ICommand ChatMenuCommand { get; }
+		public ICommand OpenProfileCommand { get; }
 		public ChatViewModel(IMessageRepository messageRepository, IAuthService authService)
 		{
 
@@ -250,6 +277,11 @@ namespace MusicMessage.ViewModels
 			CancelEditCommand = new RelayCommand(CancelEdit);
 			ToggleReactionCommand = new RelayCommand<object>(ToggleReaction);
 			LoadedCommand = new RelayCommand(async () => await LoadMessagesAsync());
+			BackCommand = new RelayCommand(GoBack);
+			VoiceCallCommand = new RelayCommand(StartVoiceCall);
+			VideoCallCommand = new RelayCommand(StartVideoCall);
+			ChatMenuCommand = new RelayCommand(ShowChatMenu);
+			OpenProfileCommand = new RelayCommand(OpenProfile);
 			_recordingTimer = new DispatcherTimer
 			{
 				Interval = TimeSpan.FromSeconds(1)
@@ -274,7 +306,12 @@ namespace MusicMessage.ViewModels
 					OnPropertyChanged(nameof(ShowSendTextButton));
 				}
 			};
-
+			ChatHeader = new ChatHeaderViewModel();
+			_typingTimer = new DispatcherTimer
+			{
+				Interval = TimeSpan.FromSeconds(3)
+			};
+			_typingTimer.Tick += (s, e) => ClearTypingStatus();
 			// Инициализация медиаплеера для предпросмотра
 			_previewPlayer = new MediaPlayer();
 			_previewTimer = new DispatcherTimer
@@ -286,17 +323,21 @@ namespace MusicMessage.ViewModels
 			_previewPlayer.MediaEnded += (s, e) => StopPreview();
 			Task.Run(async () => await LoadMessagesAsync());
 		}
-		//private async Task InitializeAsync()
-		//{
-		//	await LoadMessagesAsync();
-		//	// Другие асинхронные операции инициализации
-		//}
+		
 
 		private bool CanSend() => !string.IsNullOrWhiteSpace(MessageText);
 		public async Task LoadMessagesForCurrentReceiverAsync()
 		{
 			if (_currentReceiverId == 0) return;
 			await LoadMessagesAsync();
+		}
+		private void OpenProfile()
+		{
+			if (ChatHeader?.OtherUser != null)
+			{
+				var navigationVM = App.ServiceProvider.GetService<NavigationViewModel>();
+				navigationVM?.ShowFriendProfileCommand.Execute(ChatHeader.OtherUser.UserId);
+			}
 		}
 		private async void SendTextMessage()
 		{
@@ -311,6 +352,11 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
+				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
+
+				// СОЗДАЕМ ЧАТ-ПРЕВЬЮ ДЛЯ ОБОИХ УЧАСТНИКОВ
+				await chatRepository.CreateChatPreviewAsync(CurrentUserId, _currentReceiverId);
+
 				// Сначала сохраняем сообщение в БД чтобы получить MessageId
 				var messageId = await _messageRepository.AddReplyMessageAndGetIdAsync(
 					MessageText,
@@ -353,13 +399,43 @@ namespace MusicMessage.ViewModels
 				// ДОБАВЛЯЕМ сообщение в коллекцию и ОБНОВЛЯЕМ UI
 				Messages.Add(newMessage);
 				ScrollToLastRequested?.Invoke();
-				await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
 
+				// ОБНОВЛЯЕМ счетчики непрочитанных для ОБОИХ участников
+				await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
+				await UpdateUnreadCountAsync(CurrentUserId, _currentReceiverId);
+
+				// ОБНОВЛЯЕМ список чатов для ОБОИХ участников (если они онлайн)
+				await UpdateChatsListForBothUsers();
 
 			}
 			catch (Exception ex)
 			{
 				MessageBox.Show($"Ошибка отправки: {ex.Message}");
+			}
+		}
+		private async Task UpdateChatsListForBothUsers()
+		{
+			try
+			{
+				// Обновляем список чатов для текущего пользователя
+				var chatsListVM = App.ServiceProvider.GetService<ChatsListViewModel>();
+				if (chatsListVM != null)
+				{
+					await chatsListVM.LoadChatsAsync();
+				}
+
+				// Здесь можно добавить логику для обновления списка чатов
+				// у второго пользователя, если он онлайн (через SignalR или другой механизм)
+				// Пока просто обновляем данные в базе для второго пользователя
+				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
+				if (chatRepository != null)
+				{
+					await chatRepository.UpdateAllChatsLastMessagesAsync(_currentReceiverId);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Ошибка обновления списка чатов: {ex.Message}");
 			}
 		}
 		private void StartReply(Message message)
@@ -411,6 +487,13 @@ namespace MusicMessage.ViewModels
 				// Удаляем из коллекции
 				Messages.Remove(message);
 
+				// Обновляем список чатов
+				var chatsListVM = App.ServiceProvider.GetService<ChatsListViewModel>();
+				if (chatsListVM != null)
+				{
+					await chatsListVM.LoadChatsAsync();
+				}
+
 				// Если это голосовое сообщение, удаляем файл
 				if (message.IsVoiceMessage && !string.IsNullOrEmpty(message.AudioPath))
 				{
@@ -427,6 +510,12 @@ namespace MusicMessage.ViewModels
 						// Игнорируем ошибки удаления файла
 					}
 				}
+			}
+			catch (DbUpdateConcurrencyException ex)
+			{
+				// Сообщение уже было удалено кем-то другим
+				MessageBox.Show("Сообщение уже было удалено");
+				Messages.Remove(message); // Все равно удаляем из локальной коллекции
 			}
 			catch (Exception ex)
 			{
@@ -451,6 +540,41 @@ namespace MusicMessage.ViewModels
 			catch (Exception ex)
 			{
 				MessageBox.Show($"Ошибка удаления: {ex.Message}");
+			}
+		}
+
+		private async Task DeleteAllMessages()
+		{
+			if (_currentReceiverId == 0) return;
+
+			var result = MessageBox.Show("Вы уверены, что хотите удалить всю переписку для всех участников?",
+				"Подтверждение удаления", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+			if (result == MessageBoxResult.Yes)
+			{
+				try
+				{
+					using var context = new MessangerBaseContext();
+
+					// Удаляем все сообщения
+					await _messageRepository.DeleteAllMessagesForEveryoneAsync(CurrentUserId, _currentReceiverId);
+
+					// Очищаем локальную коллекцию
+					Messages.Clear();
+
+					// Обновляем список чатов
+					var chatsListVM = App.ServiceProvider.GetService<ChatsListViewModel>();
+					if (chatsListVM != null)
+					{
+						await chatsListVM.LoadChatsAsync();
+					}
+
+					MessageBox.Show("Переписка удалена");
+				}
+				catch (Exception ex)
+				{
+					MessageBox.Show($"Ошибка удаления переписки: {ex.Message}");
+				}
 			}
 		}
 		private void CopyText(string text)
@@ -944,6 +1068,11 @@ namespace MusicMessage.ViewModels
 		{
 			try
 			{
+				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
+
+				// СОЗДАЕМ ЧАТ-ПРЕВЬЮ ДЛЯ ОБОИХ УЧАСТНИКОВ
+				await chatRepository.CreateChatPreviewAsync(CurrentUserId, _currentReceiverId);
+
 				var fileName = $"voice_{DateTime.Now:yyyyMMddHHmmss}.wav";
 				var voiceMessagePath = Path.Combine("VoiceMessages", fileName);
 
@@ -952,22 +1081,7 @@ namespace MusicMessage.ViewModels
 
 				var waveformData = await Task.Run(() => GenerateWaveformData(voiceMessagePath));
 
-				var newMessage = new Message
-				{
-					AudioPath = voiceMessagePath,
-					Duration = duration,
-					SenderId = CurrentUserId,
-					ReceiverId = _currentReceiverId,
-					Timestamp = DateTime.Now,
-					MessageType = "Voice",
-					Sender = new User { UserName = "Вы" },
-					WaveformDataList = waveformData,
-					// ВАЖНО: Инициализируем коллекцию реакций
-					Reactions = new ObservableCollection<Reaction>(),
-					// ВАЖНО: Устанавливаем команду для реакций
-					ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction)
-				};
-
+				// Сохраняем сообщение в базу
 				await _messageRepository.AddVoiceMessageAsync(
 					voiceMessagePath,
 					duration,
@@ -975,12 +1089,30 @@ namespace MusicMessage.ViewModels
 					_currentReceiverId
 				);
 
-				// Сохраняем данные волн
-				await _messageRepository.SaveWaveformDataAsync(newMessage.MessageId, waveformData);
+				// Получаем последнее сообщение для отображения в UI
+				var lastMessage = await _messageRepository.GetLastMessageForUserAsync(CurrentUserId);
 
-				newMessage.CurrentUserId = CurrentUserId;
-				Messages.Add(newMessage);
-				await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
+				if (lastMessage != null)
+				{
+					lastMessage.CurrentUserId = CurrentUserId;
+					lastMessage.Sender = new User { UserName = "Вы" };
+					lastMessage.Reactions = new ObservableCollection<Reaction>();
+					lastMessage.ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction);
+
+					if (lastMessage.IsVoiceMessage)
+					{
+						lastMessage.WaveformDataList = GenerateRandomWaveform();
+					}
+
+					Messages.Add(lastMessage);
+
+					// ОБНОВЛЯЕМ счетчики непрочитанных для ОБОИХ участников
+					await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
+					await UpdateUnreadCountAsync(CurrentUserId, _currentReceiverId);
+
+					// ОБНОВЛЯЕМ список чатов для ОБОИХ участников
+					await UpdateChatsListForBothUsers();
+				}
 			}
 			catch (Exception ex)
 			{
@@ -1062,7 +1194,125 @@ namespace MusicMessage.ViewModels
 				MessageBox.Show($"Ошибка при установке реакции: {ex.Message}");
 			}
 		}
+		public async Task UpdateChatHeaderInfo()
+		{
+			try
+			{
+				// СБРАСЫВАЕМ текущие данные перед загрузкой новых
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					ChatHeader.OtherUser = null;
+					ChatHeader.AvatarImage = null;
+					ChatHeader.IsOnline = false;
+					ChatHeader.LastSeen = null;
+					ChatHeader.TypingStatus = string.Empty;
+				});
 
+				using var context = App.ServiceProvider.GetRequiredService<IDbContextFactory<MessangerBaseContext>>().CreateDbContext();
+
+				var otherUser = await context.Users
+					.FirstOrDefaultAsync(u => u.UserId == _currentReceiverId);
+
+				if (otherUser != null)
+				{
+					Application.Current.Dispatcher.Invoke(() =>
+					{
+						ChatHeader.OtherUser = otherUser;
+						ChatHeader.IsOnline = otherUser.IsOnline;
+						ChatHeader.LastSeen = otherUser.LastSeen;
+
+						// Принудительно загружаем аватарку
+						LoadAvatarForHeader(otherUser);
+					});
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Ошибка обновления шапки чата: {ex.Message}");
+			}
+		}
+		private async void LoadAvatarForHeader(User user)
+		{
+			if (user == null || string.IsNullOrEmpty(user.AvatarPath))
+			{
+				ChatHeader.AvatarImage = null;
+				return;
+			}
+
+			try
+			{
+				var image = await LoadImageAsync(user.AvatarPath);
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					// Проверяем, что мы все еще в том же чате
+					if (ChatHeader.OtherUser?.UserId == user.UserId)
+					{
+						ChatHeader.AvatarImage = image;
+					}
+				});
+			}
+			catch (Exception ex)
+			{
+				Debug.WriteLine($"Ошибка загрузки аватарки: {ex.Message}");
+				ChatHeader.AvatarImage = null;
+			}
+		}
+
+		// Метод для загрузки изображения
+		private async Task<BitmapImage> LoadImageAsync(string fileName)
+		{
+			return await Task.Run(() =>
+			{
+				try
+				{
+					if (string.IsNullOrEmpty(fileName))
+						return null;
+
+					var possiblePaths = new[]
+					{
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Avatars", fileName),
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Covers", fileName),
+				Path.Combine(AppDomain.CurrentDomain.BaseDirectory, fileName),
+				fileName
+			};
+
+					foreach (var fullPath in possiblePaths)
+					{
+						if (File.Exists(fullPath))
+						{
+							var bitmap = new BitmapImage();
+							bitmap.BeginInit();
+							bitmap.UriSource = new Uri(fullPath);
+							bitmap.CacheOption = BitmapCacheOption.OnLoad;
+							bitmap.EndInit();
+							bitmap.Freeze();
+							return bitmap;
+						}
+					}
+
+					return null;
+				}
+				catch
+				{
+					return null;
+				}
+			});
+		}
+
+
+		// Метод для показа статуса "печатает"
+		public void SetTypingStatus(string userName)
+		{
+			ChatHeader.TypingStatus = $"{userName} печатает...";
+			_typingTimer.Stop();
+			_typingTimer.Start();
+		}
+
+		private void ClearTypingStatus()
+		{
+			ChatHeader.TypingStatus = string.Empty;
+			_typingTimer.Stop();
+		}
 		private List<double> GenerateRandomWaveform()
 		{
 			var random = new Random();
@@ -1075,17 +1325,18 @@ namespace MusicMessage.ViewModels
 			try
 			{
 				using var context = App.ServiceProvider.GetRequiredService<IDbContextFactory<MessangerBaseContext>>().
-					CreateDbContext();
+			CreateDbContext();
 				var messageRepository = new MessageRepository(App.ServiceProvider.
 					GetRequiredService<IDbContextFactory<MessangerBaseContext>>());
 
 				// 1. СНАЧАЛА получаем непрочитанные сообщения ДО загрузки чата
 				var unreadMessagesToUpdate = await context.Messages
-			   .Where(m => m.SenderId == _currentReceiverId &&
-						  m.ReceiverId == CurrentUserId &&
-						  !m.IsRead &&
-						  !m.IsDeletedForEveryone)
-			   .ToListAsync();
+					.Where(m => m.SenderId == _currentReceiverId &&
+							  m.ReceiverId == CurrentUserId &&
+							  !m.IsRead &&
+							  !m.IsDeletedForEveryone &&
+							  !(m.IsDeletedForReceiver && m.ReceiverId == CurrentUserId)) // ДОБАВЬТЕ эту проверку
+					.ToListAsync();
 				// 2. Помечаем как прочитанные
 				if (unreadMessagesToUpdate.Count > 0)
 				{
@@ -1163,7 +1414,15 @@ namespace MusicMessage.ViewModels
 					}
 					ScrollToLastRequested?.Invoke();
 				});
+				await UpdateChatHeaderInfo();
 
+				// Принудительно обновляем привязки
+				Application.Current.Dispatcher.Invoke(() =>
+				{
+					OnPropertyChanged(nameof(ChatHeader));
+					ChatHeader.OnPropertyChanged(nameof(ChatHeader.AvatarImage));
+					ChatHeader.OnPropertyChanged(nameof(ChatHeader.OtherUser));
+				});
 			}
 			catch (Exception ex)
 			{
@@ -1196,57 +1455,55 @@ namespace MusicMessage.ViewModels
 			}
 		}
 		private async Task UpdateUnreadCountAsync(int userId, int otherUserId)
-		{
-			try
-			{
-				using var context = new MessangerBaseContext();
+{
+    try
+    {
+        using var context = new MessangerBaseContext();
 
-				// Правильный подсчет непрочитанных
-				var unreadCount = await context.Messages
-					.CountAsync(m => m.SenderId == otherUserId &&
-								   m.ReceiverId == userId &&
-								   !m.IsRead &&
-								   !m.IsDeletedForEveryone);
+        // Правильный подсчет непрочитанных
+        var unreadCount = await context.Messages
+            .CountAsync(m => m.SenderId == otherUserId &&
+                           m.ReceiverId == userId &&
+                           !m.IsRead &&
+                           !m.IsDeletedForEveryone &&
+                           !(m.IsDeletedForReceiver && m.ReceiverId == userId));
 
-				// Находим или создаем ChatPreview
-				var chatPreview = await context.ChatPreviews
-					.FirstOrDefaultAsync(c => c.UserId == userId &&
-											c.OtherUserId == otherUserId);
+        // Находим или создаем ChatPreview
+        var chatPreview = await context.ChatPreviews
+            .FirstOrDefaultAsync(c => c.UserId == userId &&
+                                    c.OtherUserId == otherUserId);
 
-				if (chatPreview == null)
-				{
-					// Если чата нет - создаем
-					var otherUser = await context.Users.FindAsync(otherUserId);
-					if (otherUser != null)
-					{
-						chatPreview = new ChatPreview
-						{
-							UserId = userId,
-							OtherUserId = otherUserId,
-							OtherUserName = otherUser.UserName,
-							LastMessage = "Чат начат",
-							LastMessageTime = DateTime.Now,
-							UnreadCount = unreadCount
-						};
-						context.ChatPreviews.Add(chatPreview);
-					}
-				}
-				else
-				{
-					// Обновляем существующий
-					chatPreview.UnreadCount = unreadCount;
-				}
+        if (chatPreview == null)
+        {
+            // Если чата нет - создаем (это backup, основной создается в CreateChatPreviewAsync)
+            var otherUser = await context.Users.FindAsync(otherUserId);
+            if (otherUser != null)
+            {
+                chatPreview = new ChatPreview
+                {
+                    UserId = userId,
+                    OtherUserId = otherUserId,
+                    OtherUserName = otherUser.UserName,
+                    LastMessage = "Чат начат",
+                    LastMessageTime = DateTime.Now,
+                    UnreadCount = unreadCount
+                };
+                context.ChatPreviews.Add(chatPreview);
+            }
+        }
+        else
+        {
+            // Обновляем существующий
+            chatPreview.UnreadCount = unreadCount;
+        }
 
-				await context.SaveChangesAsync();
-
-			
-
-			}
-			catch (Exception ex)
-			{
-				
-			}
-		}
+        await context.SaveChangesAsync();
+    }
+    catch (Exception ex)
+    {
+        Debug.WriteLine($"UpdateUnreadCountAsync error: {ex.Message}");
+    }
+}
 
 
 		private List<double> GenerateWaveformData(string audioPath)
@@ -1323,7 +1580,77 @@ namespace MusicMessage.ViewModels
 			return null;
 		}
 
+		private void GoBack()
+		{
+			// Очищаем шапку перед выходом
+			Application.Current.Dispatcher.Invoke(() =>
+			{
+				ChatHeader.OtherUser = null;
+				ChatHeader.AvatarImage = null;
+				ChatHeader.IsOnline = false;
+				ChatHeader.LastSeen = null;
+				ChatHeader.TypingStatus = string.Empty;
+			});
 
+			// Навигация назад к списку чатов
+			var navigationVM = App.ServiceProvider.GetService<NavigationViewModel>();
+			navigationVM?.ShowChatsCommand.Execute(null);
+		}
+
+		private void StartVoiceCall()
+		{
+			MessageBox.Show("Голосовой вызов будет реализован позже");
+		}
+
+		private void StartVideoCall()
+		{
+			MessageBox.Show("Видеозвонок будет реализован позже");
+		}
+
+		private void ShowChatMenu()
+		{
+			// Показываем контекстное меню с дополнительными опциями
+			var contextMenu = new ContextMenu
+			{
+				Items =
+		{
+			new MenuItem { Header = "Информация о чате", Command = new RelayCommand(ShowChatInfo) },
+			new MenuItem { Header = "Очистить историю", Command = new RelayCommand(ClearChatHistory) },
+			new MenuItem { Header = "Удалить чат", Command = new RelayCommand(DeleteChat) },
+			new Separator(),
+			new MenuItem { Header = "Заблокировать пользователя", Command = new RelayCommand(BlockUser) }
+		}
+			};
+
+			contextMenu.IsOpen = true;
+		}
+
+		private void ShowChatInfo()
+		{
+			MessageBox.Show("Информация о чате будет реализована позже");
+		}
+
+		private async void ClearChatHistory()
+		{
+			await DeleteAllMessages();
+		}
+
+		private async void DeleteChat()
+		{
+			var result = MessageBox.Show("Вы уверены, что хотите удалить этот чат?",
+				"Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+			if (result == MessageBoxResult.Yes)
+			{
+				await DeleteAllMessages();
+				GoBack();
+			}
+		}
+
+		private void BlockUser()
+		{
+			MessageBox.Show("Блокировка пользователя будет реализована позже");
+		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
 		protected void OnPropertyChanged([CallerMemberName] string propertyname = null)

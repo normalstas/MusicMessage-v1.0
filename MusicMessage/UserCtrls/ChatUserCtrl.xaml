@@ -271,7 +271,7 @@
                         <Border Style="{StaticResource ReplyLineStyle}"/>
 
                         <StackPanel Grid.Column="1" Orientation="Vertical">
-                            <TextBlock Text="{Binding ReplyToMessage.Sender.UserName}" 
+                            <TextBlock Text="{Binding ReplyToMessage.Sender.FirstName}" 
                                Style="{StaticResource ReplyTextStyle}"/>
                             <TextBlock Text="{Binding ReplyToMessage.ContentMess}" 
                                Style="{StaticResource ReplyContentStyle}"
@@ -301,7 +301,7 @@
 
                         <!-- Основное содержимое сообщения -->
                         <StackPanel Grid.Column="0">
-                            <TextBlock Text="{Binding Sender.UserName}" FontWeight="Bold">
+                            <TextBlock Text="{Binding Sender.FirstName}" FontWeight="Bold">
                                 <TextBlock.Visibility>
                                     <MultiBinding Converter="{StaticResource ShowUserNameConverter}">
                                         <Binding Path="SenderId"/>
@@ -492,13 +492,18 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Шапка чата -->
+        <local:ChatHeader Grid.Row="0"
+                      DataContext="{Binding}"
+                      Height="60"/>
         <!-- Лента сообщений -->
-        <ListView x:Name="MessagesListView" Grid.Row="0"
+        <ListView x:Name="MessagesListView" Grid.Row="1"
       ItemsSource="{Binding Messages}"
       ScrollViewer.VerticalScrollBarVisibility="Auto"
       VirtualizingStackPanel.IsVirtualizing="True"
@@ -514,7 +519,7 @@
         </ListView>
 
         <!-- Панель ответа -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
             Background="#FFE3F2FD" 
             CornerRadius="5"
             Padding="8"
@@ -538,7 +543,7 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Row="2" Margin="5">
+        <Grid Grid.Row="3" Margin="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

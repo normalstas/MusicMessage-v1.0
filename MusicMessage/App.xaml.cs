@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using MusicMessage.Models;
 using MusicMessage.Repository;
+using MusicMessage.UserCtrls;
 using MusicMessage.ViewModels;
 using System;
 using System.Configuration;
@@ -48,7 +49,12 @@ namespace MusicMessage
 			services.AddScoped<NavigationViewModel>();
 			services.AddScoped<ChatsListViewModel>();
 			services.AddScoped<ChatViewModel>();
-
+			services.AddTransient<ProfileViewModel>();
+			services.AddTransient<IProfileRepository, ProfileRepository>();
+			services.AddTransient<ProfileView>();
+			services.AddTransient<ProfileViewModel>();
+			services.AddTransient<EditProfileViewModel>();
+			services.AddTransient<IProfileRepository, ProfileRepository>();
 			services.AddScoped<MainWindow>();
 		}
 	}

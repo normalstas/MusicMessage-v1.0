@@ -1,0 +1,127 @@
+﻿<UserControl x:Class="MusicMessage.UserCtrls.EditProfileView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MusicMessage.UserCtrls"
+             xmlns:conv="clr-namespace:MusicMessage.Converter"
+             mc:Ignorable="d" 
+             d:DesignHeight="500" d:DesignWidth="600">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+    <Grid>
+
+        <ScrollViewer x:Name="MainContent" 
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20" Width="400">
+                <TextBlock Text="Редактирование профиля" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Обложка профиля" FontWeight="Bold" Margin="0,0,0,10"/>
+                    <Border Height="150" Background="LightGray" CornerRadius="5">
+                        <Image Source="{Binding CoverImage}" Stretch="UniformToFill">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Opacity" Value="1"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CoverImage}" Value="{x:Null}">
+                                            <Setter Property="Opacity" Value="0.3"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Border>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Center">
+                        <Button Content="Сменить обложку" Command="{Binding ChangeCoverCommand}" Margin="0,0,10,0"/>
+                        <Button Content="Удалить обложку" Command="{Binding RemoveCoverCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+                <!-- Аватар -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                    <Border Width="100" Height="100" CornerRadius="50" Background="LightGray">
+                        <Image Source="{Binding AvatarImage}" Stretch="UniformToFill">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Opacity" Value="1"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AvatarImage}" Value="{x:Null}">
+                                            <Setter Property="Opacity" Value="0.3"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Border>
+                    <StackPanel Margin="20,0,0,0" VerticalAlignment="Center">
+                        <Button Content="Сменить аватар" Command="{Binding ChangeAvatarCommand}" Margin="0,0,0,5"/>
+                        <Button Content="Удалить аватар" Command="{Binding RemoveAvatarCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Основная информация -->
+                <TextBlock Text="Основная информация" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Имя" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding EditedUser.FirstName}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Фамилия" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding EditedUser.LastName}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Дата рождения" Margin="0,5,0,2"/>
+                <DatePicker SelectedDate="{Binding EditedUser.DateOfBirth}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Пол" Margin="0,5,0,2"/>
+                <ComboBox Text="{Binding EditedUser.Gender}" Margin="0,0,0,10" Width="200">
+                    <ComboBoxItem>Male</ComboBoxItem>
+                    <ComboBoxItem>Female</ComboBoxItem>
+                    <ComboBoxItem>Other</ComboBoxItem>
+                </ComboBox>
+
+                <!-- Местоположение -->
+                <TextBlock Text="Местоположение" FontWeight="Bold" Margin="0,20,0,10"/>
+
+                <TextBlock Text="Город" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding EditedUser.City}" Margin="0,0,0,10"/>
+
+                <TextBlock Text="Страна" Margin="0,5,0,2"/>
+                <TextBox Text="{Binding EditedUser.Country}" Margin="0,0,0,20"/>
+
+                <!-- О себе -->
+                <TextBlock Text="О себе" FontWeight="Bold" Margin="0,0,0,10"/>
+                <TextBox Text="{Binding EditedUser.Bio}" 
+                AcceptsReturn="True" TextWrapping="Wrap"
+                Height="100" Margin="0,0,0,20"/>
+
+                <!-- Кнопки -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Сохранить" Command="{Binding SaveProfileCommand}" 
+                   Width="100" Margin="0,0,10,0" Padding="10,5"/>
+                    <Button Content="Отмена" Command="{Binding CancelCommand}" 
+                   Width="100" Padding="10,5"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+        <Border x:Name="CoverEditorContainer" 
+        Background="White"
+        Visibility="{Binding IsCoverEditingMode, Converter={StaticResource BoolToVisibilityConverter}}">
+            <local:ImageCropperControl x:Name="CoverCropper"
+                      CropMode="FixedAspectRatio"
+                      TargetAspectRatio="3"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"/>
+        </Border>
+
+        <!-- Контейнер для редактора АВАТАРА -->
+        <Border x:Name="AvatarEditorContainer" 
+        Background="White"
+        Visibility="{Binding IsAvatarEditingMode, Converter={StaticResource BoolToVisibilityConverter}}">
+            <local:ImageCropperControl x:Name="AvatarCropper"
+                      CropMode="FixedAspectRatio"
+                      TargetAspectRatio="1"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"/>
+        </Border>
+    </Grid>
+    
+</UserControl>

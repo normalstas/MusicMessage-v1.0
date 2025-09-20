@@ -37,18 +37,30 @@
                     <Hyperlink Command="{Binding SwitchToRegisterCommand}">Нет аккаунта? Зарегистрируйтесь</Hyperlink>
                 </TextBlock>
             </StackPanel>
+                <!-- Форма регистрации -->
+            <ScrollViewer
+               VerticalScrollBarVisibility="Auto"
+                Visibility="{Binding IsLoginMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
+                <StackPanel >
+                    <TextBlock Text="Регистрация" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Логин"/>
+                    <TextBox Text="{Binding Username}" ToolTip="Придумайте имя пользователя"/>
+                    <TextBlock Text="Почта"/>
+                    <TextBox Text="{Binding Email}" ToolTip="Введите ваш email"/>
+                    <TextBlock Text="Пароль"/>
+                    <PasswordBox x:Name="RegisterPasswordBox" PasswordChar="*"/>
+                    <TextBlock Text="Имя"/>
+                    <TextBox Text="{Binding Firstname}" ToolTip="Введите ваш Имя"/>
+                    <TextBlock Text="Фамилия"/>
+                    <TextBox Text="{Binding Lastname}" ToolTip="Введите ваш Фамилия"/>
 
-            <!-- Форма регистрации -->
-            <StackPanel Visibility="{Binding IsLoginMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Invert}">
-                <TextBlock Text="Регистрация" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center"/>
-                <TextBox Text="{Binding Username}" ToolTip="Придумайте имя пользователя"/>
-                <TextBox Text="{Binding Email}" ToolTip="Введите ваш email"/>
-                <PasswordBox x:Name="RegisterPasswordBox" PasswordChar="*"/>
-                <Button Content="Зарегистрироваться" Command="{Binding RegisterCommand}"/>
-                <TextBlock>
-                    <Hyperlink Command="{Binding SwitchToLoginCommand}">Уже есть аккаунт? Войдите</Hyperlink>
-                </TextBlock>
-            </StackPanel>
+                    <Button Content="Зарегистрироваться" Command="{Binding RegisterCommand}"/>
+                    <TextBlock>
+        <Hyperlink Command="{Binding SwitchToLoginCommand}">Уже есть аккаунт? Войдите</Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </ScrollViewer>
+            
         </StackPanel>
     </Grid>
 </UserControl>

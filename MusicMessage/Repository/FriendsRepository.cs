@@ -34,35 +34,35 @@ namespace MusicMessage.Repository
 		{
 			_contextFactory = contextFactory;
 		}
-		
+
 		public async Task<List<UserSearchResult>> SearchUsersAsync(int currentUserId, string searchTerm)
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			var query = context.Users
+			var users = await context.Users
 				.Where(u => u.UserId != currentUserId &&
-						   (u.UserName.Contains(searchTerm) || u.Email.Contains(searchTerm)))
+						   (u.UserName.Contains(searchTerm) ||
+							u.FirstName.Contains(searchTerm) ||
+							u.LastName.Contains(searchTerm)))
 				.Select(u => new UserSearchResult
 				{
 					UserId = u.UserId,
 					UserName = u.UserName,
-					Email = u.Email,
-					AvatarPath = u.AvatarPath,
+					FirstName = u.FirstName,
+					LastName = u.LastName,
 					IsOnline = u.IsOnline,
-					LastSeen = u.LastSeen,
-					IsCurrentUser = false
-				});
+					AvatarPath = u.AvatarPath
+				})
+				.ToListAsync();
 
-			var results = await query.ToListAsync();
-
-			// Получаем статусы дружбы для каждого пользователя
-			foreach (var user in results)
+			// Загружаем статусы дружбы - ИЗМЕНИТЕ ЭТУ ЧАСТЬ
+			foreach (var user in users)
 			{
 				var friendship = await GetFriendshipStatusAsync(currentUserId, user.UserId);
-				user.FriendshipStatus = friendship?.Status;
+				user.FriendshipStatus = friendship?.Status; // Берем только статус из объекта
 			}
 
-			return results;
+			return users;
 		}
 
 		public async Task SendFriendRequestAsync(int requesterId, int addresseeId)

@@ -15,6 +15,8 @@ namespace MusicMessage.Models
 		public string Email { get; set; }
 		public string AvatarPath { get; set; }
 		public bool IsOnline { get; set; }
+		public string LastName { get; set; }
+		public string FirstName { get; set; }
 		public DateTime? LastSeen { get; set; }
 
 		private FriendshipStatus? _friendshipStatus;
@@ -30,7 +32,6 @@ namespace MusicMessage.Models
 		}
 
 		public bool IsCurrentUser { get; set; }
-
 		public string FriendshipStatusText => GetFriendshipStatusText();
 
 		private string GetFriendshipStatusText()

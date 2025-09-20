@@ -29,12 +29,16 @@ namespace MusicMessage.Models
 
 		[MaxLength(500)]
 		public string LastMessage { get; set; }
-
+		[MaxLength(500)]
+		public string FirstName { get; set; }
+		[MaxLength(500)]
+		public string LastName { get; set; }
 		[Required]
 		public DateTime LastMessageTime { get; set; }
 
 		public int UnreadCount { get; set; }
-
+		[MaxLength(500)]
+		public string AvatarPath { get; set; }
 		// Навигационные свойства
 		[ForeignKey("UserId")]
 		public virtual User User { get; set; }
