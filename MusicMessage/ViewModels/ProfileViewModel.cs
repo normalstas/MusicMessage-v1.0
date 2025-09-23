@@ -117,7 +117,21 @@ namespace MusicMessage.ViewModels
 				MessageBox.Show($"Ошибка: {ex.Message}");
 			}
 		}
+		[RelayCommand]
+		private async Task ShowFriendProfile(int friendId)
+		{
+			try
+			{
+				// Вызываем событие для навигации
+				OnProfileRequested?.Invoke(friendId);
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Ошибка открытия профиля: {ex.Message}");
+			}
+		}
 
+		public event Action<int> OnProfileRequested;
 		[RelayCommand]
 		private void EditProfile()
 		{

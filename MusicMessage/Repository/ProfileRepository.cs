@@ -53,6 +53,7 @@ namespace MusicMessage.Repository
 				existingUser.ProfileCoverPath = user.ProfileCoverPath; // ДОБАВЬТЕ ЭТУ СТРОЧКУ
 
 				await context.SaveChangesAsync();
+
 			}
 		}
 		private string TruncateString(string value, int maxLength)

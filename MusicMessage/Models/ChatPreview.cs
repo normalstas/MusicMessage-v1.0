@@ -35,6 +35,8 @@ namespace MusicMessage.Models
 		public string LastName { get; set; }
 		[Required]
 		public DateTime LastMessageTime { get; set; }
+		[NotMapped]
+		public string ActualAvatarPath => OtherUser?.AvatarPath ?? AvatarPath;
 
 		public int UnreadCount { get; set; }
 		[MaxLength(500)]

@@ -130,7 +130,6 @@ namespace MusicMessage.ViewModels
 
 				if (userId > 0)
 				{
-					// Вызываем событие для перехода в профиль
 					OnProfileRequested?.Invoke(userId);
 				}
 			}
@@ -234,7 +233,7 @@ namespace MusicMessage.ViewModels
 				// Обновляем статус в поиске если этот пользователь там есть
 				UpdateSearchResultStatus(newFriend.UserId, FriendshipStatus.Accepted);
 
-				MessageBox.Show($"{newFriend.UserName} добавлен в друзья!");
+				MessageBox.Show($"{newFriend.FullName} добавлен в друзья!");
 			}
 			catch (Exception ex)
 			{
@@ -334,8 +333,8 @@ namespace MusicMessage.ViewModels
 						? friendship.AddresseeId
 						: friendship.RequesterId;
 					userName = friendship.RequesterId == _authService.CurrentUser.UserId
-						? friendship.Addressee?.UserName
-						: friendship.Requester?.UserName;
+						? friendship.Addressee?.FullName
+						: friendship.Requester?.FullName;
 				}
 
 				if (userId > 0)

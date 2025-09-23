@@ -21,40 +21,41 @@ namespace MusicMessage
 			ConfigureServices(serviceCollection);
 
 			ServiceProvider = serviceCollection.BuildServiceProvider();
-			var friendsViewModel = ServiceProvider.GetService<FriendsViewModel>();
-			var navigationViewModel = new NavigationViewModel(
-				ServiceProvider.GetService<IAuthService>(),
-				ServiceProvider.GetService<LoginViewModel>(),
-				ServiceProvider,
-				friendsViewModel
-			);
+
+			var navigationViewModel = ServiceProvider.GetService<NavigationViewModel>(); // Получаем через ServiceProvider
+
 			var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
+			mainWindow.DataContext = navigationViewModel;
 			mainWindow.Show();
 		}
 
 		private void ConfigureServices(IServiceCollection services)
 		{
-			
 			services.AddDbContextFactory<MessangerBaseContext>(options =>
-	   options.UseSqlServer("Server=localhost; Database=MessangerBase; Trusted_Connection=True; MultipleActiveResultSets=true; TrustServerCertificate=true;encrypt=false"),
-	   ServiceLifetime.Transient);
+				options.UseSqlServer("Server=localhost; Database=MessangerBase; Trusted_Connection=True; MultipleActiveResultSets=true; TrustServerCertificate=true;encrypt=false"),
+				ServiceLifetime.Transient);
 
 			services.AddSingleton<IAuthService, AuthService>();
-			// Измените репозитории на Transient
+
+			// Репозитории
 			services.AddTransient<IMessageRepository, MessageRepository>();
 			services.AddTransient<IChatRepository, ChatRepository>();
 			services.AddTransient<IFriendsRepository, FriendsRepository>();
+			services.AddTransient<IProfileRepository, ProfileRepository>();
+
+			// ViewModels
 			services.AddScoped<FriendsViewModel>();
 			services.AddScoped<LoginViewModel>();
-			services.AddScoped<NavigationViewModel>();
+			services.AddScoped<NavigationViewModel>(); // Регистрируем NavigationViewModel
 			services.AddScoped<ChatsListViewModel>();
 			services.AddScoped<ChatViewModel>();
-			services.AddTransient<ProfileViewModel>();
-			services.AddTransient<IProfileRepository, ProfileRepository>();
+			services.AddScoped<ProfileViewModel>();
+			services.AddScoped<EditProfileViewModel>();
+
+			// Views
 			services.AddTransient<ProfileView>();
-			services.AddTransient<ProfileViewModel>();
-			services.AddTransient<EditProfileViewModel>();
-			services.AddTransient<IProfileRepository, ProfileRepository>();
+
+			// MainWindow
 			services.AddScoped<MainWindow>();
 		}
 	}

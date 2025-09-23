@@ -39,11 +39,32 @@ namespace MusicMessage.Repository
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			var users = await context.Users
-				.Where(u => u.UserId != currentUserId &&
-						   (u.UserName.Contains(searchTerm) ||
-							u.FirstName.Contains(searchTerm) ||
-							u.LastName.Contains(searchTerm)))
+			// Разделяем поисковый запрос на слова
+			var searchWords = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+			var query = context.Users.Where(u => u.UserId != currentUserId);
+
+			// Строим сложный запрос для поиска по имени и фамилии
+			if (searchWords.Length == 1)
+			{
+				// Если одно слово - ищем в имени, фамилии или логине
+				var word = searchWords[0];
+				query = query.Where(u =>
+					u.FirstName.Contains(word) ||
+					u.LastName.Contains(word));
+			}
+			else if (searchWords.Length >= 2)
+			{
+				// Если два слова или больше - ищем комбинации имени и фамилии
+				var firstName = searchWords[0];
+				var lastName = searchWords[1];
+
+				query = query.Where(u =>
+					(u.FirstName.Contains(firstName) && u.LastName.Contains(lastName)) ||
+					(u.FirstName.Contains(lastName) && u.LastName.Contains(firstName)));
+			}
+
+			var users = await query
 				.Select(u => new UserSearchResult
 				{
 					UserId = u.UserId,
@@ -55,11 +76,11 @@ namespace MusicMessage.Repository
 				})
 				.ToListAsync();
 
-			// Загружаем статусы дружбы - ИЗМЕНИТЕ ЭТУ ЧАСТЬ
+			// Загружаем статусы дружбы
 			foreach (var user in users)
 			{
 				var friendship = await GetFriendshipStatusAsync(currentUserId, user.UserId);
-				user.FriendshipStatus = friendship?.Status; // Берем только статус из объекта
+				user.FriendshipStatus = friendship?.Status;
 			}
 
 			return users;

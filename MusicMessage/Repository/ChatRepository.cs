@@ -180,10 +180,10 @@ namespace MusicMessage.Repository
 
 			// Получаем все чаты пользователя только для чтения
 			var userChats = await context.ChatPreviews
-				.Include(c => c.OtherUser)
-				.Where(c => c.UserId == userId)
-				.AsNoTracking()
-				.ToListAsync();
+	   .Include(c => c.OtherUser) // Убедитесь, что это есть
+	   .Where(c => c.UserId == userId)
+	   .AsNoTracking()
+	   .ToListAsync();
 
 			var validChats = new List<ChatPreview>();
 			var chatsToDeleteIds = new List<int>();

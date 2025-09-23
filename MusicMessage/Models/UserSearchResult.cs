@@ -18,7 +18,7 @@ namespace MusicMessage.Models
 		public string LastName { get; set; }
 		public string FirstName { get; set; }
 		public DateTime? LastSeen { get; set; }
-
+		public string FullName => $"{FirstName} {LastName}".Trim();
 		private FriendshipStatus? _friendshipStatus;
 		public FriendshipStatus? FriendshipStatus
 		{

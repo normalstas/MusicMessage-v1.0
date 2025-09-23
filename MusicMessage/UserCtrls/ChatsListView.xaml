@@ -63,7 +63,8 @@
                             <Border Width="40" Height="40" CornerRadius="50" Background="White" Padding="2">
                                 <Ellipse>
                                     <Ellipse.Fill>
-                                        <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" Stretch="UniformToFill"/>
+                                        <ImageBrush ImageSource="{Binding ActualAvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" 
+                Stretch="UniformToFill"/>
                                     </Ellipse.Fill>
                                 </Ellipse>
                             </Border>

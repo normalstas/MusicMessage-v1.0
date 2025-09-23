@@ -33,14 +33,14 @@
                     <ControlTemplate TargetType="TextBox">
                         <Grid>
                             <TextBlock x:Name="placeholderTextBlock" 
-                                   Text="Поиск пользователей..." 
-                                   Foreground="Gray" 
-                                   Margin="5,0"
-                                   VerticalAlignment="Center"
-                                   Visibility="Collapsed"/>
+                           Text="Поиск по имени и фамилии..." 
+                           Foreground="Gray" 
+                           Margin="5,0"
+                           VerticalAlignment="Center"
+                           Visibility="Collapsed"/>
                             <ScrollViewer x:Name="PART_ContentHost" 
-                                      VerticalAlignment="Center"
-                                      Margin="2,0"/>
+                              VerticalAlignment="Center"
+                              Margin="2,0"/>
                         </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="Text" Value="">
@@ -109,7 +109,7 @@
 
                                     <!-- Информация -->
                                     <StackPanel Grid.Column="1" Margin="10,0">
-                                        <TextBlock Text="{Binding UserName}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding FullName}" FontWeight="Bold"/>
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="В сети" Foreground="Green" 
                                                        Visibility="{Binding IsOnline, Converter={StaticResource BoolToVisibilityConverter}}"/>
@@ -155,7 +155,7 @@
                                     </Border>
 
                                     <StackPanel Grid.Column="1" Margin="10,0">
-                                        <TextBlock Text="{Binding Requester.UserName}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Requester.FullName}" FontWeight="Bold"/>
                                         <TextBlock Text="Хочет добавить вас в друзья" Foreground="Gray"/>
                                     </StackPanel>
 
@@ -196,7 +196,7 @@
                                     </Border>
                                     <!-- Информация -->
                                     <StackPanel Grid.Column="1" Margin="10,0">
-                                        <TextBlock Text="{Binding UserName}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding FullName}" FontWeight="Bold"/>
 
                                         <!-- Статус дружбы -->
                                         <TextBlock Text="{Binding FriendshipStatusText}" 

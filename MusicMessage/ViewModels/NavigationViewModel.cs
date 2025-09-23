@@ -13,7 +13,7 @@ using System.Windows.Input;
 
 namespace MusicMessage.ViewModels
 {
-	public partial class NavigationViewModel : ObservableObject
+	public partial class NavigationViewModel : ObservableObject, IDisposable
 	{
 		[ObservableProperty]
 		private object _currentView;
@@ -21,7 +21,7 @@ namespace MusicMessage.ViewModels
 		private readonly IAuthService _authService;
 		private readonly LoginViewModel _loginViewModel;
 		private readonly IServiceProvider _serviceProvider;
-
+		private ProfileViewModel _currentProfileViewModel;
 		[ObservableProperty]
 		private bool _isLoggedIn;
 
@@ -36,7 +36,12 @@ namespace MusicMessage.ViewModels
 			friendsViewModel.OnChatRequested += OnChatRequestedFromFriends;
 			friendsViewModel.OnProfileRequested += OnProfileRequestedFromFriends;
 			_loginViewModel.OnLoginSuccessful += OnLoginSuccessful;
+
 			CurrentView = _loginViewModel;
+		}
+		private async void OnProfileRequestedFromProfile(int userId)
+		{
+			await ShowFriendProfile(userId);
 		}
 		private async void OnChatRequestedFromProfile(int receiverId)
 		{
@@ -74,6 +79,11 @@ namespace MusicMessage.ViewModels
 				friendsViewModel.OnChatRequested -= OnChatRequestedFromFriends;
 				friendsViewModel.OnProfileRequested -= OnProfileRequestedFromFriends;
 			}
+			var profileViewModel = _serviceProvider.GetService<ProfileViewModel>();
+			if (profileViewModel != null)
+			{
+				profileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
+			}
 		}
 		private void OnLoginSuccessful()
 		{
@@ -93,9 +103,22 @@ namespace MusicMessage.ViewModels
 			var profileVM = _serviceProvider.GetService<ProfileViewModel>();
 			if (profileVM != null)
 			{
+				// Отписываемся от предыдущего экземпляра
+				if (_currentProfileViewModel != null)
+				{
+					_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
+					_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
+					_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
+				}
+
 				await profileVM.LoadProfileAsync(_authService.CurrentUser.UserId);
+
+				// Подписываемся на события нового экземпляра
 				profileVM.OnEditRequested += OnEditProfileRequested;
 				profileVM.OnChatRequested += OnChatRequestedFromProfile;
+				profileVM.OnProfileRequested += OnProfileRequestedFromProfile;
+
+				_currentProfileViewModel = profileVM; // Сохраняем ссылку
 				CurrentView = profileVM;
 			}
 		}
@@ -159,8 +182,22 @@ namespace MusicMessage.ViewModels
 				var profileVM = _serviceProvider.GetService<ProfileViewModel>();
 				if (profileVM != null)
 				{
+					// Отписываемся от предыдущего экземпляра
+					if (_currentProfileViewModel != null)
+					{
+						_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
+						_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
+						_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
+					}
+
 					await profileVM.LoadProfileAsync(userId);
+
+					// Подписываемся на события нового экземпляра
+					profileVM.OnEditRequested += OnEditProfileRequested;
 					profileVM.OnChatRequested += OnChatRequestedFromProfile;
+					profileVM.OnProfileRequested += OnProfileRequestedFromProfile;
+
+					_currentProfileViewModel = profileVM; // Сохраняем ссылку
 					CurrentView = profileVM;
 				}
 			}
@@ -213,6 +250,22 @@ namespace MusicMessage.ViewModels
 				{
 					profileVM.OnChatRequested -= OnChatRequestedFromProfile;
 				}
+			}
+		}
+		public void Dispose()
+		{
+			var friendsViewModel = _serviceProvider.GetService<FriendsViewModel>();
+			if (friendsViewModel != null)
+			{
+				friendsViewModel.OnChatRequested -= OnChatRequestedFromFriends;
+				friendsViewModel.OnProfileRequested -= OnProfileRequestedFromFriends;
+			}
+
+			if (_currentProfileViewModel != null)
+			{
+				_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
+				_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
+				_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
 			}
 		}
 	}

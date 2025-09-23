@@ -20,6 +20,10 @@ public partial class MessangerBaseContext : DbContext
 	public virtual DbSet<ChatPreview> ChatPreviews { get; set; }
 	public virtual DbSet<User> Users { get; set; }
 	public virtual DbSet<Friendship> Friendships { get; set; }
+	public virtual DbSet<Post> Posts { get; set; }
+	public virtual DbSet<PostLike> PostLikes { get; set; }
+	public virtual DbSet<PostComment> PostComments { get; set; }
+	public virtual DbSet<PostShare> PostShares { get; set; }
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -133,6 +137,80 @@ public partial class MessangerBaseContext : DbContext
 
 			entity.HasIndex(e => new { e.RequesterId, e.AddresseeId })
 				.IsUnique();
+		});
+		modelBuilder.Entity<Post>(entity =>
+		{
+			entity.ToTable("Posts");
+
+			entity.Property(e => e.Content).HasMaxLength(1000);
+			entity.Property(e => e.ImagePath).HasMaxLength(500);
+			entity.Property(e => e.VideoPath).HasMaxLength(500);
+			entity.Property(e => e.CreatedAt).HasColumnType("datetime2");
+			entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+
+			entity.HasOne(d => d.Author)
+				.WithMany()
+				.HasForeignKey(d => d.AuthorId)
+				.OnDelete(DeleteBehavior.Cascade);
+		});
+
+		modelBuilder.Entity<PostLike>(entity =>
+		{
+			entity.ToTable("PostLikes");
+
+			entity.HasIndex(e => new { e.PostId, e.UserId }).IsUnique();
+
+			entity.HasOne(d => d.Post)
+				.WithMany(p => p.Likes)
+				.HasForeignKey(d => d.PostId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(d => d.User)
+				.WithMany()
+				.HasForeignKey(d => d.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
+		});
+
+		modelBuilder.Entity<PostComment>(entity =>
+		{
+			entity.ToTable("PostComments");
+
+			entity.Property(e => e.Content).HasMaxLength(500);
+			entity.Property(e => e.CreatedAt).HasColumnType("datetime2");
+			entity.Property(e => e.UpdatedAt).HasColumnType("datetime2");
+
+			entity.HasOne(d => d.Post)
+				.WithMany(p => p.Comments)
+				.HasForeignKey(d => d.PostId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(d => d.Author)
+				.WithMany()
+				.HasForeignKey(d => d.AuthorId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(d => d.ParentComment)
+				.WithMany(p => p.Replies)
+				.HasForeignKey(d => d.ParentCommentId)
+				.OnDelete(DeleteBehavior.ClientCascade);
+		});
+
+		modelBuilder.Entity<PostShare>(entity =>
+		{
+			entity.ToTable("PostShares");
+
+			entity.Property(e => e.SharedComment).HasMaxLength(500);
+			entity.Property(e => e.SharedAt).HasColumnType("datetime2");
+
+			entity.HasOne(d => d.Post)
+				.WithMany(p => p.Shares)
+				.HasForeignKey(d => d.PostId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(d => d.User)
+				.WithMany()
+				.HasForeignKey(d => d.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
 		});
 
 		OnModelCreatingPartial(modelBuilder);

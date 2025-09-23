@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <conv:FriendshipStatusToVisibilityConverter x:Key="FriendshipStatusToVisibilityConverter"/>
+        <conv:AvatarPathToImageConverter x:Key="AvatarPathToImageConverter"/>
         <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <Style x:Key="ProfileButtonStyle" TargetType="Button">
             <Setter Property="Margin" Value="5"/>
@@ -111,15 +112,22 @@
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
 
-                                            <Ellipse Width="40" Height="40" Fill="LightBlue"/>
+                                            <Border Width="40" Height="40" CornerRadius="50" Background="White" Padding="2">
+                                                <Ellipse>
+                                                    <Ellipse.Fill>
+                                                        <ImageBrush ImageSource="{Binding AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}" 
+                                                             Stretch="UniformToFill"/>
+                                                    </Ellipse.Fill>
+                                                </Ellipse>
+                                            </Border>
 
-                                            <TextBlock Grid.Column="1" Text="{Binding UserName, Mode=OneWay}" 
+                                            <TextBlock Grid.Column="1" Text="{Binding FullName, Mode=OneWay}" 
                                       VerticalAlignment="Center" Margin="10,0"/>
 
                                             <Button Grid.Column="2" Content="Профиль"
-                                    Command="{Binding DataContext.ShowFriendProfileCommand, 
-                                        RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding UserId}"/>
+        Command="{Binding DataContext.ShowFriendProfileCommand, 
+                RelativeSource={RelativeSource AncestorType=UserControl}}"
+        CommandParameter="{Binding UserId}"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
