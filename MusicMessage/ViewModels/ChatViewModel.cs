@@ -33,7 +33,7 @@ namespace MusicMessage.ViewModels
 	{
 		public ObservableCollection<Message> Messages { get; } = new ObservableCollection<Message>();
 		private readonly IMessageRepository _messageRepository;
-		private readonly IAuthService _authService; // Добавляем сервис аутентификации
+		private readonly IAuthService _authService;
 		private string _messageText;
 		private readonly VoiceRecorder _voiceRecorder = new VoiceRecorder();
 		private Message _currentPlayingMessage;
@@ -138,14 +138,14 @@ namespace MusicMessage.ViewModels
 				_currentReceiverId = value;
 				OnPropertyChanged();
 
-				// Сбрасываем шапку перед загрузкой новых сообщений
+				
 				Application.Current.Dispatcher.Invoke(() =>
 				{
 					ChatHeader.OtherUser = null;
 					ChatHeader.AvatarImage = null;
 				});
 
-				// Загружаем сообщения только если ID валидный
+			
 				if (_currentReceiverId > 0)
 				{
 					_ = LoadMessagesAsync();
@@ -163,7 +163,7 @@ namespace MusicMessage.ViewModels
 				_messageText = value;
 				OnPropertyChanged();
 				OnPropertyChanged(nameof(ShowSendTextButton));
-				OnPropertyChanged(nameof(ShowRecordingButton)); // Добавьте эту строку
+				OnPropertyChanged(nameof(ShowRecordingButton));
 				(SendTextCommand as RelayCommand)?.NotifyCanExecuteChanged();
 				(ConfirmEditCommand as RelayCommand)?.NotifyCanExecuteChanged();
 			}
@@ -199,28 +199,28 @@ namespace MusicMessage.ViewModels
 				OnPropertyChanged();
 				OnPropertyChanged(nameof(IsEditing));
 
-				// Копируем текст редактируемого сообщения в поле ввода
+			
 				MessageText = value?.ContentMess ?? string.Empty;
 
-				// Обновляем видимость всех кнопок
+				
 				OnPropertyChanged(nameof(ShowSendTextButton));
-				OnPropertyChanged(nameof(ShowRecordingButton)); // Добавьте эту строку
+				OnPropertyChanged(nameof(ShowRecordingButton)); 
 
-				// Уведомляем команду об изменении состояния
+				
 				(ConfirmEditCommand as RelayCommand)?.NotifyCanExecuteChanged();
 			}
 		}
 		[NotMapped]
 		public bool ShowRecordingButton => ShowVoiceControls && !IsEditing;
-		// Свойство для проверки, идет ли редактирование
+		
 		[NotMapped]
 		public bool IsEditing => EditingMessage != null;
 		public ICommand SendTextCommand { get; }
 		public ICommand SendRecordedVoiceCommand { get; }
 		public ICommand CancelRecordingCommand { get; }
 		public ICommand ReRecordCommand { get; }
-		public ICommand StartRecordingCommand { get; } // Для начала записи
-		public ICommand StopRecordingCommand { get; }  // Для остановки и отправки
+		public ICommand StartRecordingCommand { get; }
+		public ICommand StopRecordingCommand { get; }  
 		public ICommand PlayVoiceMessageCommand { get; }
 		public ICommand PreviewRecordedVoiceCommand { get; }
 		public ICommand StartReplyCommand { get; }
@@ -250,11 +250,11 @@ namespace MusicMessage.ViewModels
 			if (!_authService.IsLoggedIn)
 			{
 				MessageBox.Show("Пользователь не авторизован");
-				// Можно выбросить исключение или обработать эту ситуацию
+			
 				return;
 			}
 			InitializeVoiceMessagesDirectory();
-			// Инициализация команд
+			
 			SendTextCommand = new RelayCommand(SendTextMessage, CanSend);
 			SendRecordedVoiceCommand = new RelayCommand(SendRecordedVoice);
 			CancelRecordingCommand = new RelayCommand(CancelRecording);
@@ -287,9 +287,9 @@ namespace MusicMessage.ViewModels
 				Interval = TimeSpan.FromSeconds(1)
 			};
 			_recordingTimer.Tick += (s, e) => RecordingDuration += TimeSpan.FromSeconds(1);
-			// Подписка на события VoiceRecorder
+			
 			_voiceRecorder.RecordingStopped += OnRecordingStopped;
-			// Загрузка сообщений при старте
+			
 			Application.Current.Exit += (s, e) => Cleanup();
 			_voiceRecorder.AudioDataAvailable += OnAudioDataAvailable;
 			_waveformUpdateTimer = new DispatcherTimer
@@ -312,7 +312,7 @@ namespace MusicMessage.ViewModels
 				Interval = TimeSpan.FromSeconds(3)
 			};
 			_typingTimer.Tick += (s, e) => ClearTypingStatus();
-			// Инициализация медиаплеера для предпросмотра
+			
 			_previewPlayer = new MediaPlayer();
 			_previewTimer = new DispatcherTimer
 			{
@@ -332,7 +332,7 @@ namespace MusicMessage.ViewModels
 			await LoadMessagesAsync();
 		}
 		private void OpenProfile()
-		{
+		{                                     
 			if (ChatHeader?.OtherUser != null)
 			{
 				var navigationVM = App.ServiceProvider.GetService<NavigationViewModel>();
@@ -354,10 +354,10 @@ namespace MusicMessage.ViewModels
 			{
 				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
 
-				// СОЗДАЕМ ЧАТ-ПРЕВЬЮ ДЛЯ ОБОИХ УЧАСТНИКОВ
+				
 				await chatRepository.CreateChatPreviewAsync(CurrentUserId, _currentReceiverId);
 
-				// Сначала сохраняем сообщение в БД чтобы получить MessageId
+				
 				var messageId = await _messageRepository.AddReplyMessageAndGetIdAsync(
 					MessageText,
 					CurrentUserId,
@@ -365,7 +365,7 @@ namespace MusicMessage.ViewModels
 					SelectedMessageForReply?.MessageId
 				);
 
-				// Теперь загружаем полное сообщение из БД с полученным ID
+				
 				var newMessage = await _messageRepository.GetMessageByIdAsync(messageId);
 
 				if (newMessage == null)
@@ -374,11 +374,11 @@ namespace MusicMessage.ViewModels
 					return;
 				}
 
-				// Инициализируем свойства для UI
+				
 				newMessage.CurrentUserId = CurrentUserId;
 				newMessage.Sender = new User { UserName = "Вы" };
 
-				// ВАЖНО: Инициализируем коллекцию и команду
+			
 				if (newMessage.Reactions == null)
 				{
 					newMessage.Reactions = new ObservableCollection<Reaction>();
@@ -386,7 +386,7 @@ namespace MusicMessage.ViewModels
 
 				newMessage.ToggleReactionCommand = new RelayCommand<object[]>(ToggleReaction);
 
-				// ВАЖНО: Загружаем полные данные о сообщении-ответе, если есть
+				
 				if (newMessage.ReplyToMessageId.HasValue && newMessage.ReplyToMessage == null)
 				{
 					newMessage.ReplyToMessage = await _messageRepository.GetMessageByIdAsync(
@@ -396,15 +396,15 @@ namespace MusicMessage.ViewModels
 				MessageText = string.Empty;
 				SelectedMessageForReply = null;
 
-				// ДОБАВЛЯЕМ сообщение в коллекцию и ОБНОВЛЯЕМ UI
+			
 				Messages.Add(newMessage);
 				ScrollToLastRequested?.Invoke();
 
-				// ОБНОВЛЯЕМ счетчики непрочитанных для ОБОИХ участников
+				
 				await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
 				await UpdateUnreadCountAsync(CurrentUserId, _currentReceiverId);
 
-				// ОБНОВЛЯЕМ список чатов для ОБОИХ участников (если они онлайн)
+				
 				await UpdateChatsListForBothUsers();
 
 			}
@@ -417,16 +417,14 @@ namespace MusicMessage.ViewModels
 		{
 			try
 			{
-				// Обновляем список чатов для текущего пользователя
+				
 				var chatsListVM = App.ServiceProvider.GetService<ChatsListViewModel>();
 				if (chatsListVM != null)
 				{
 					await chatsListVM.LoadChatsAsync();
 				}
 
-				// Здесь можно добавить логику для обновления списка чатов
-				// у второго пользователя, если он онлайн (через SignalR или другой механизм)
-				// Пока просто обновляем данные в базе для второго пользователя
+				
 				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
 				if (chatRepository != null)
 				{
@@ -453,13 +451,13 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
-				// Обновляем в базе данных
+				
 				await _messageRepository.DeleteMessageForMeAsync(message.MessageId, CurrentUserId);
 
-				// Обновляем локальную копию
+				
 				message.IsDeletedForSender = true;
 
-				// Уведомляем UI об изменениях
+				
 				var index = Messages.IndexOf(message);
 				if (index != -1)
 				{
@@ -478,23 +476,23 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
-				// Обновляем в базе данных
+				
 				await _messageRepository.DeleteMessageForEveryoneAsync(message.MessageId);
 
-				// Обновляем локальную копию
+				
 				message.IsDeletedForEveryone = true;
 
-				// Удаляем из коллекции
+			
 				Messages.Remove(message);
 
-				// Обновляем список чатов
+			
 				var chatsListVM = App.ServiceProvider.GetService<ChatsListViewModel>();
 				if (chatsListVM != null)
 				{
 					await chatsListVM.LoadChatsAsync();
 				}
 
-				// Если это голосовое сообщение, удаляем файл
+			
 				if (message.IsVoiceMessage && !string.IsNullOrEmpty(message.AudioPath))
 				{
 					try
@@ -507,15 +505,15 @@ namespace MusicMessage.ViewModels
 					}
 					catch
 					{
-						// Игнорируем ошибки удаления файла
+					
 					}
 				}
 			}
 			catch (DbUpdateConcurrencyException ex)
 			{
-				// Сообщение уже было удалено кем-то другим
+			
 				MessageBox.Show("Сообщение уже было удалено");
-				Messages.Remove(message); // Все равно удаляем из локальной коллекции
+				Messages.Remove(message);
 			}
 			catch (Exception ex)
 			{
@@ -529,10 +527,10 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
-				// Обновляем в базе данных
+			
 				await _messageRepository.DeleteMessageForReceiverAsync(message.MessageId, CurrentUserId);
 
-				// Удаляем из коллекции
+			
 				Messages.Remove(message);
 
 				Debug.WriteLine($"Message {message.MessageId} deleted for receiver");
@@ -556,13 +554,13 @@ namespace MusicMessage.ViewModels
 				{
 					using var context = new MessangerBaseContext();
 
-					// Удаляем все сообщения
+					
 					await _messageRepository.DeleteAllMessagesForEveryoneAsync(CurrentUserId, _currentReceiverId);
 
-					// Очищаем локальную коллекцию
+				
 					Messages.Clear();
 
-					// Обновляем список чатов
+				
 					var chatsListVM = App.ServiceProvider.GetService<ChatsListViewModel>();
 					if (chatsListVM != null)
 					{
@@ -602,7 +600,7 @@ namespace MusicMessage.ViewModels
 			}
 		}
 
-		// Метод для подтверждения редактирования
+		
 		private async void ConfirmEdit()
 		{
 			if (EditingMessage == null || string.IsNullOrWhiteSpace(MessageText))
@@ -610,35 +608,33 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
-				// Сохраняем ссылку на редактируемое сообщение
+				
 				var messageId = EditingMessage.MessageId;
 				var originalTimestamp = EditingMessage.Timestamp;
 
-				// Обновляем только текст в базе данных
+				
 				await _messageRepository.UpdateMessageTextAsync(messageId, MessageText);
-
-				// Находим сообщение в коллекции и обновляем его
 				var messageToUpdate = Messages.FirstOrDefault(m => m.MessageId == messageId);
 				if (messageToUpdate != null)
 				{
-					// Обновляем только текст, время оставляем прежним
+					
 					messageToUpdate.ContentMess = MessageText;
 
-					// Принудительно обновляем UI
+					
 					var index = Messages.IndexOf(messageToUpdate);
 					if (index != -1)
 					{
-						// Временное удаление и добавление для обновления UI
+						
 						Messages.RemoveAt(index);
 
-						// Создаем новое сообщение с обновленным текстом но старым временем
+						
 						var updatedMessage = new Message
 						{
 							MessageId = messageToUpdate.MessageId,
-							ContentMess = MessageText, // Новый текст
+							ContentMess = MessageText,
 							SenderId = messageToUpdate.SenderId,
 							ReceiverId = messageToUpdate.ReceiverId,
-							Timestamp = originalTimestamp, // Старое время
+							Timestamp = originalTimestamp,
 							MessageType = messageToUpdate.MessageType,
 							AudioPath = messageToUpdate.AudioPath,
 							Duration = messageToUpdate.Duration,
@@ -664,21 +660,20 @@ namespace MusicMessage.ViewModels
 		}
 
 
-		// Метод проверки возможности редактирования
+	
 		private bool CanConfirmEdit()
 		{
 			return !string.IsNullOrWhiteSpace(MessageText) &&
 				   EditingMessage != null;
-			// Убрали проверку на изменение текста, чтобы кнопка была всегда активна
-			// EditingMessage.ContentMess != MessageText;
+			
 		}
 
-		// Метод для отмены редактирования
+	
 		private void CancelEdit()
 		{
 			EditingMessage = null;
 			MessageText = string.Empty;
-			// Также обновляем видимость кнопок после отмены редактирования
+		
 			OnPropertyChanged(nameof(ShowRecordingButton));
 		}
 
@@ -715,14 +710,14 @@ namespace MusicMessage.ViewModels
 
 			Debug.WriteLine($"Navigating to message: {replyMessage.ReplyToMessageId}");
 
-			// Ищем сообщение в текущей коллекции
+			
 			var targetMessage = Messages.FirstOrDefault(m => m.MessageId == replyMessage.ReplyToMessageId);
 
 			if (targetMessage != null)
 			{
 				Application.Current.Dispatcher.Invoke(() =>
 				{
-					// Ищем ChatUserCtrl во всех открытых окнах
+					
 					foreach (Window window in Application.Current.Windows)
 					{
 						var chatControl = VisualTreeHelperExtensions.FindVisualChildren<ChatUserCtrl>(window).FirstOrDefault();
@@ -741,7 +736,7 @@ namespace MusicMessage.ViewModels
 			}
 		}
 
-		// Вспомогательный метод для поиска дочерних элементов
+		
 		private static IEnumerable<T> FindVisualChildren<T>(DependencyObject depObj) where T : DependencyObject
 		{
 			if (depObj != null)
@@ -780,7 +775,7 @@ namespace MusicMessage.ViewModels
 		}
 		private void UpdateRecordingWaveform(object sender, EventArgs e)
 		{
-			// Генерируем случайные данные для визуализации во время записи
+			
 			var random = new Random();
 			var newData = Enumerable.Range(0, 30)
 								   .Select(_ => (double)random.Next(5, 25))
@@ -820,12 +815,12 @@ namespace MusicMessage.ViewModels
 			{
 				if (IsPreviewPlaying)
 				{
-					// Если уже играет - останавливаем
+					
 					StopPreview();
 					return;
 				}
 
-				// Сохраняем во временный файл для воспроизведения
+				
 				var tempFile = Path.GetTempFileName() + ".wav";
 				File.WriteAllBytes(tempFile, _recordedAudioData);
 
@@ -846,7 +841,7 @@ namespace MusicMessage.ViewModels
 			_previewTimer.Stop();
 			IsPreviewPlaying = false;
 
-			// Удаляем временный файл
+			
 			try
 			{
 				if (_previewPlayer.Source != null && _previewPlayer.Source.IsFile)
@@ -854,13 +849,12 @@ namespace MusicMessage.ViewModels
 					File.Delete(_previewPlayer.Source.LocalPath);
 				}
 			}
-			catch { /* Игнорируем ошибки удаления */ }
+			catch { }
 		}
 
 		private void UpdatePreviewProgress()
 		{
-			// Здесь можно обновлять прогресс воспроизведения, если нужно
-			// Например, для визуализации прогресса прослушивания
+			//потом сделаю
 		}
 
 
@@ -930,16 +924,16 @@ namespace MusicMessage.ViewModels
 
 			try
 			{
-				// Остановить текущее воспроизведение, если оно есть
+				
 				if (_currentPlayingMessage != null && _currentPlayingMessage != message)
 				{
 					_currentPlayingMessage.IsPlaying = false;
 					_currentPlayingMessage.IsPaused = false;
-					_currentPlayingMessage.CurrentPlaybackTime = null; // Сбрасываем время
+					_currentPlayingMessage.CurrentPlaybackTime = null; 
 					_currentPlayingMessage.CleanupPlayer();
 				}
 
-				// Если сообщение уже играет и на паузе - возобновляем
+				
 				if (message.IsPlaying && message.IsPaused)
 				{
 					message.Player.Play();
@@ -947,7 +941,7 @@ namespace MusicMessage.ViewModels
 					_currentPlayingMessage = message;
 					return;
 				}
-				// Если сообщение играет без паузы - ставим на паузу
+				
 				else if (message.IsPlaying)
 				{
 					message.Player.Pause();
@@ -955,7 +949,7 @@ namespace MusicMessage.ViewModels
 					return;
 				}
 
-				// Новое воспроизведение
+			
 				var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, message.AudioPath);
 
 				if (!File.Exists(fullPath))
@@ -967,16 +961,16 @@ namespace MusicMessage.ViewModels
 				message.InitializePlayer();
 				message.Player.Open(new Uri(fullPath, UriKind.Absolute));
 
-				// Обновляем таймер для отображения текущего времени
+				
 				message.PlaybackTimer.Tick += (s, e) => UpdatePlaybackPositionAndTime(message);
 				message.PlaybackTimer.Start();
 
 				message.Player.MediaEnded += (s, e) => OnPlaybackEnded(message);
 
-				// Устанавливаем обработчик для обновления времени при изменении позиции
+			
 				message.Player.MediaOpened += (s, e) =>
 				{
-					// Инициализируем начальное время
+					
 					UpdatePlaybackTime(message);
 				};
 
@@ -1001,7 +995,7 @@ namespace MusicMessage.ViewModels
 		{
 			if (message.Player != null && message.Player.NaturalDuration.HasTimeSpan)
 			{
-				// Форматируем текущее время позиции
+			
 				var currentTime = message.Player.Position;
 				message.CurrentPlaybackTime = currentTime.ToString("mm\\:ss");
 			}
@@ -1011,7 +1005,7 @@ namespace MusicMessage.ViewModels
 		{
 			Application.Current.Dispatcher.Invoke(() =>
 			{
-				// Восстанавливаем исходную длительность после завершения
+				
 				if (message.Duration.HasValue)
 				{
 					message.CurrentPlaybackTime = message.Duration.Value.ToString("mm\\:ss");
@@ -1024,34 +1018,34 @@ namespace MusicMessage.ViewModels
 				message.CleanupPlayer();
 				_currentPlayingMessage = null;
 
-				// Найти следующее голосовое сообщение после текущего
+				
 				PlayNextVoiceMessage(message);
 			});
 		}
 
 		public void Cleanup()
 		{
-			// Остановка записи, если она идет
+			
 			if (IsRecording)
 			{
 				_voiceRecorder.StopRecording();
 			}
 
-			// Остановка воспроизведения
+			
 			if (_currentPlayingMessage != null)
 			{
 				_currentPlayingMessage.CleanupPlayer();
 				_currentPlayingMessage = null;
 			}
 
-			// Остановка предпросмотра
+			
 			StopPreview();
 			_previewPlayer.Close();
 
-			// Остановка таймера записи
+			
 			_recordingTimer.Stop();
 
-			// Отписка от событий
+			
 			_voiceRecorder.RecordingStopped -= OnRecordingStopped;
 		}
 		private void UpdatePlaybackPosition(Message message)
@@ -1070,7 +1064,7 @@ namespace MusicMessage.ViewModels
 			{
 				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
 
-				// СОЗДАЕМ ЧАТ-ПРЕВЬЮ ДЛЯ ОБОИХ УЧАСТНИКОВ
+				
 				await chatRepository.CreateChatPreviewAsync(CurrentUserId, _currentReceiverId);
 
 				var fileName = $"voice_{DateTime.Now:yyyyMMddHHmmss}.wav";
@@ -1081,7 +1075,7 @@ namespace MusicMessage.ViewModels
 
 				var waveformData = await Task.Run(() => GenerateWaveformData(voiceMessagePath));
 
-				// Сохраняем сообщение в базу
+				
 				await _messageRepository.AddVoiceMessageAsync(
 					voiceMessagePath,
 					duration,
@@ -1089,7 +1083,7 @@ namespace MusicMessage.ViewModels
 					_currentReceiverId
 				);
 
-				// Получаем последнее сообщение для отображения в UI
+				
 				var lastMessage = await _messageRepository.GetLastMessageForUserAsync(CurrentUserId);
 
 				if (lastMessage != null)
@@ -1106,11 +1100,11 @@ namespace MusicMessage.ViewModels
 
 					Messages.Add(lastMessage);
 
-					// ОБНОВЛЯЕМ счетчики непрочитанных для ОБОИХ участников
+					
 					await UpdateUnreadCountAsync(_currentReceiverId, CurrentUserId);
 					await UpdateUnreadCountAsync(CurrentUserId, _currentReceiverId);
 
-					// ОБНОВЛЯЕМ список чатов для ОБОИХ участников
+					
 					await UpdateChatsListForBothUsers();
 				}
 			}
@@ -1123,9 +1117,7 @@ namespace MusicMessage.ViewModels
 		{
 			try
 			{
-				// Обрабатываем два формата параметров:
-				// 1. Из контекстного меню: object[] { message, emoji }
-				// 2. Из кнопки реакции: Reaction object
+			
 
 				Message message = null;
 				string emoji = null;
@@ -1134,40 +1126,40 @@ namespace MusicMessage.ViewModels
 
 				if (parameter is object[] parameters && parameters.Length >= 2)
 				{
-					// Вызов из контекстного меню
+					
 					message = parameters[0] as Message;
 					emoji = parameters[1] as string;
 					if (message != null) messageId = message.MessageId;
 				}
 				else if (parameter is Reaction reaction)
 				{
-					// Вызов из кнопки реакции
+					
 					messageId = reaction.MessageId;
 					userId = reaction.UserId;
 					emoji = reaction.Emoji;
 
-					// Находим сообщение в коллекции
+					
 					message = Messages.FirstOrDefault(m => m.MessageId == reaction.MessageId);
 				}
 
 				if (messageId == 0 || string.IsNullOrEmpty(emoji)) return;
 
-				// Проверяем, есть ли уже такая реакция от текущего пользователя
+				
 				var existingReaction = message?.Reactions?.FirstOrDefault(r =>
 					r.UserId == CurrentUserId && r.Emoji == emoji);
 
 				if (existingReaction != null)
 				{
-					// Удаляем реакцию
+				
 					await _messageRepository.RemoveReactionAsync(messageId, CurrentUserId);
 				}
 				else
 				{
-					// Добавляем/обновляем реакцию
+					
 					await _messageRepository.AddOrUpdateReactionAsync(messageId, CurrentUserId, emoji);
 				}
 
-				// Перезагружаем реакции из базы
+			
 				var allMessageIds = Messages.Select(m => m.MessageId).ToList();
 				var reactionsDict = await GetReactionsForMessagesAsync(allMessageIds);
 
@@ -1198,7 +1190,7 @@ namespace MusicMessage.ViewModels
 		{
 			try
 			{
-				// СБРАСЫВАЕМ текущие данные перед загрузкой новых
+				
 				Application.Current.Dispatcher.Invoke(() =>
 				{
 					ChatHeader.OtherUser = null;
@@ -1221,7 +1213,7 @@ namespace MusicMessage.ViewModels
 						ChatHeader.IsOnline = otherUser.IsOnline;
 						ChatHeader.LastSeen = otherUser.LastSeen;
 
-						// Принудительно загружаем аватарку
+						
 						LoadAvatarForHeader(otherUser);
 					});
 				}
@@ -1244,7 +1236,7 @@ namespace MusicMessage.ViewModels
 				var image = await LoadImageAsync(user.AvatarPath);
 				Application.Current.Dispatcher.Invoke(() =>
 				{
-					// Проверяем, что мы все еще в том же чате
+					
 					if (ChatHeader.OtherUser?.UserId == user.UserId)
 					{
 						ChatHeader.AvatarImage = image;
@@ -1258,7 +1250,7 @@ namespace MusicMessage.ViewModels
 			}
 		}
 
-		// Метод для загрузки изображения
+		
 		private async Task<BitmapImage> LoadImageAsync(string fileName)
 		{
 			return await Task.Run(() =>
@@ -1300,7 +1292,7 @@ namespace MusicMessage.ViewModels
 		}
 
 
-		// Метод для показа статуса "печатает"
+		
 		public void SetTypingStatus(string userName)
 		{
 			ChatHeader.TypingStatus = $"{userName} печатает...";
@@ -1329,15 +1321,15 @@ namespace MusicMessage.ViewModels
 				var messageRepository = new MessageRepository(App.ServiceProvider.
 					GetRequiredService<IDbContextFactory<MessangerBaseContext>>());
 
-				// 1. СНАЧАЛА получаем непрочитанные сообщения ДО загрузки чата
+				
 				var unreadMessagesToUpdate = await context.Messages
 					.Where(m => m.SenderId == _currentReceiverId &&
 							  m.ReceiverId == CurrentUserId &&
 							  !m.IsRead &&
 							  !m.IsDeletedForEveryone &&
-							  !(m.IsDeletedForReceiver && m.ReceiverId == CurrentUserId)) // ДОБАВЬТЕ эту проверку
+							  !(m.IsDeletedForReceiver && m.ReceiverId == CurrentUserId)) 
 					.ToListAsync();
-				// 2. Помечаем как прочитанные
+				
 				if (unreadMessagesToUpdate.Count > 0)
 				{
 					foreach (var msg in unreadMessagesToUpdate)
@@ -1347,16 +1339,16 @@ namespace MusicMessage.ViewModels
 					await context.SaveChangesAsync();
 				}
 
-				// 3. ОБНОВЛЯЕМ СЧЕТЧИК в ChatPreviews
+			
 				await UpdateUnreadCountAsync(CurrentUserId, _currentReceiverId);
 
-				// 4. ТЕПЕРЬ загружаем сообщения для отображения
+				
 
 				var messages = await context.Messages
 		   .Include(m => m.Sender)
 		   .Include(m => m.Receiver)
-		   .Include(m => m.MessageReactions) // ВАЖНО: включаем реакции
-			   .ThenInclude(r => r.User)     // и пользователей реакций
+		   .Include(m => m.MessageReactions)
+			   .ThenInclude(r => r.User)    
 		   .Include(m => m.ReplyToMessage)
 			   .ThenInclude(rm => rm.Sender)
 		   .Where(m => (m.SenderId == CurrentUserId && m.ReceiverId == _currentReceiverId) ||
@@ -1369,7 +1361,7 @@ namespace MusicMessage.ViewModels
 		   .ToListAsync();
 				var messageIds = messages.Select(m => m.MessageId).ToList();
 				var reactionsDict = await GetReactionsForMessagesAsync(messageIds);
-				// 5. Отображаем сообщения в UI
+			
 				await Application.Current.Dispatcher.InvokeAsync(() =>
 				{
 					Messages.Clear();
@@ -1416,7 +1408,7 @@ namespace MusicMessage.ViewModels
 				});
 				await UpdateChatHeaderInfo();
 
-				// Принудительно обновляем привязки
+				
 				Application.Current.Dispatcher.Invoke(() =>
 				{
 					OnPropertyChanged(nameof(ChatHeader));
@@ -1460,7 +1452,7 @@ namespace MusicMessage.ViewModels
     {
         using var context = new MessangerBaseContext();
 
-        // Правильный подсчет непрочитанных
+       
         var unreadCount = await context.Messages
             .CountAsync(m => m.SenderId == otherUserId &&
                            m.ReceiverId == userId &&
@@ -1468,14 +1460,14 @@ namespace MusicMessage.ViewModels
                            !m.IsDeletedForEveryone &&
                            !(m.IsDeletedForReceiver && m.ReceiverId == userId));
 
-        // Находим или создаем ChatPreview
+       
         var chatPreview = await context.ChatPreviews
             .FirstOrDefaultAsync(c => c.UserId == userId &&
                                     c.OtherUserId == otherUserId);
 
         if (chatPreview == null)
         {
-            // Если чата нет - создаем (это backup, основной создается в CreateChatPreviewAsync)
+            
             var otherUser = await context.Users.FindAsync(otherUserId);
             if (otherUser != null)
             {
@@ -1493,7 +1485,6 @@ namespace MusicMessage.ViewModels
         }
         else
         {
-            // Обновляем существующий
             chatPreview.UnreadCount = unreadCount;
         }
 
@@ -1513,17 +1504,17 @@ namespace MusicMessage.ViewModels
 				var result = new List<double>();
 				using (var audioFile = new AudioFileReader(audioPath))
 				{
-					// Анализируем первые 5 секунд записи
+					
 					var sampleRate = audioFile.WaveFormat.SampleRate;
 					var channels = audioFile.WaveFormat.Channels;
-					var samplesToAnalyze = sampleRate * channels * 5; // 5 секунд
+					var samplesToAnalyze = sampleRate * channels * 5; 
 					var buffer = new float[samplesToAnalyze];
 					var samplesRead = audioFile.Read(buffer, 0, samplesToAnalyze);
 
 					if (samplesRead == 0)
 						return GenerateRandomWaveform();
 
-					// Разбиваем на 30 сегментов
+					
 					int segmentSize = samplesRead / 30;
 					for (int i = 0; i < 30; i++)
 					{
@@ -1546,11 +1537,11 @@ namespace MusicMessage.ViewModels
 
 		private void PlayNextVoiceMessage(Message currentMessage)
 		{
-			// Найти индекс текущего сообщения в коллекции
+			
 			int currentIndex = Messages.IndexOf(currentMessage);
 			if (currentIndex == -1) return;
 
-			// Ищем следующее голосовое сообщение
+			
 			for (int i = currentIndex + 1; i < Messages.Count; i++)
 			{
 				if (Messages[i].IsVoiceMessage)
@@ -1560,11 +1551,10 @@ namespace MusicMessage.ViewModels
 				}
 			}
 
-			// Если не нашли следующее голосовое, можно проиграть первое в списке
-			// Или просто ничего не делать, в зависимости от желаемого поведения
+			
 		}
 
-		// Вспомогательный метод для поиска ScrollViewer внутри ListView
+		
 		private static ScrollViewer GetScrollViewer(DependencyObject depObj)
 		{
 			if (depObj is ScrollViewer scrollViewer)
@@ -1582,7 +1572,7 @@ namespace MusicMessage.ViewModels
 
 		private void GoBack()
 		{
-			// Очищаем шапку перед выходом
+			
 			Application.Current.Dispatcher.Invoke(() =>
 			{
 				ChatHeader.OtherUser = null;
@@ -1592,7 +1582,7 @@ namespace MusicMessage.ViewModels
 				ChatHeader.TypingStatus = string.Empty;
 			});
 
-			// Навигация назад к списку чатов
+			
 			var navigationVM = App.ServiceProvider.GetService<NavigationViewModel>();
 			navigationVM?.ShowChatsCommand.Execute(null);
 		}
@@ -1609,7 +1599,7 @@ namespace MusicMessage.ViewModels
 
 		private void ShowChatMenu()
 		{
-			// Показываем контекстное меню с дополнительными опциями
+			
 			var contextMenu = new ContextMenu
 			{
 				Items =

@@ -27,7 +27,7 @@ namespace MusicMessage.Models
 		[Required]
 		public DateTime SharedAt { get; set; } = DateTime.UtcNow;
 
-		// Навигационные свойства
+		
 		[ForeignKey("PostId")]
 		public virtual Post Post { get; set; }
 

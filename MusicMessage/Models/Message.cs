@@ -77,7 +77,7 @@ public partial class Message : INotifyPropertyChanged
 	[NotMapped]
 	public bool IsVoiceMessage => !string.IsNullOrEmpty(AudioPath) || MessageType == "Voice";
 	[NotMapped]
-	public string? WaveformData { get; set; } // Хранится в БД как строка
+	public string? WaveformData { get; set; }
 
 	[NotMapped]
 	public List<double> WaveformDataList
@@ -93,7 +93,7 @@ public partial class Message : INotifyPropertyChanged
 	}
 	public Message()
 	{
-		MessageType = "Text"; // Значение по умолчанию
+		MessageType = "Text";
 		Reactions = new ObservableCollection<Reaction>();
 	}
 
@@ -151,7 +151,7 @@ public partial class Message : INotifyPropertyChanged
 		IsPlaying = false;
 		IsPaused = false;
 		PlaybackPosition = 0;
-		CurrentPlaybackTime = null; // Сбрасываем текущее время
+		CurrentPlaybackTime = null;
 	}
 
 	private string _currentPlaybackTime;
@@ -175,7 +175,7 @@ public partial class Message : INotifyPropertyChanged
 		{
 			if (_reactions != value)
 			{
-				// Отписываемся от старой коллекции
+				
 				if (_reactions != null)
 				{
 					_reactions.CollectionChanged -= Reactions_CollectionChanged;
@@ -183,7 +183,6 @@ public partial class Message : INotifyPropertyChanged
 
 				_reactions = value;
 
-				// Подписываемся на новую коллекцию
 				if (_reactions != null)
 				{
 					_reactions.CollectionChanged += Reactions_CollectionChanged;
@@ -203,7 +202,7 @@ public partial class Message : INotifyPropertyChanged
 			if (Reactions == null || Reactions.Count == 0)
 				return null;
 
-			// Группируем реакции по эмодзи и формируем строку вида "👍 2 ❤️ 1"
+		
 			var summary = Reactions
 				.GroupBy(r => r.Emoji)
 				.OrderByDescending(g => g.Count())
@@ -214,10 +213,10 @@ public partial class Message : INotifyPropertyChanged
 		}
 	}
 	
-	//ДОБАВЬTE метод для обновления реакции от конкретного пользователя
+	
 	[NotMapped]
 	public ICommand ToggleReactionCommand { get; set; }
-	// Эта команда будет назначена из ViewModel
+	
 	public bool IsRead { get; set; } = false;
 	public bool IsEdited { get; set; } = false;
 	public virtual User Receiver { get; set; } = null!;

@@ -16,9 +16,9 @@ using System.Windows.Shapes;
 namespace MusicMessage.UserCtrls
 {
 
-	public partial class ChatHeader : UserControl
+	public partial class PostDetailsView : UserControl
 	{
-		public ChatHeader()
+		public PostDetailsView()
 		{
 			InitializeComponent();
 		}

@@ -9,19 +9,20 @@ using System.Windows.Media.Imaging;
 using System.IO;
 namespace MusicMessage.Converter
 {
-	public class AvatarPathToImageConverter : IValueConverter
+	public class PostImageConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (value is string avatarPath && !string.IsNullOrEmpty(avatarPath))
+			if (value is string imagePath && !string.IsNullOrEmpty(imagePath))
 			{
 				try
 				{
+				
 					var possiblePaths = new[]
 					{
-						Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Avatars", avatarPath),
-						Path.Combine(AppDomain.CurrentDomain.BaseDirectory, avatarPath),
-						avatarPath
+						Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Posts", imagePath),
+						Path.Combine(AppDomain.CurrentDomain.BaseDirectory, imagePath),
+						imagePath
 					};
 
 					foreach (var fullPath in possiblePaths)
@@ -40,33 +41,16 @@ namespace MusicMessage.Converter
 				}
 				catch
 				{
+					
 				}
 			}
 
-			return CreateDefaultAvatarImage();
+			return null;
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			throw new NotImplementedException();
-		}
-
-		private BitmapImage CreateDefaultAvatarImage()
-		{
-			try
-			{
-				var bitmap = new BitmapImage();
-				bitmap.BeginInit();
-				bitmap.UriSource = new Uri("");
-				bitmap.CacheOption = BitmapCacheOption.OnLoad;
-				bitmap.EndInit();
-				bitmap.Freeze();
-				return bitmap;
-			}
-			catch
-			{
-				return null;
-			}
 		}
 	}
 }

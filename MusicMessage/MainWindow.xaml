@@ -29,6 +29,12 @@
         <DataTemplate DataType="{x:Type vm:EditProfileViewModel}">
             <us:EditProfileView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NewsFeedViewModel}">
+            <us:NewsFeedView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PostDetailsViewModel}">
+            <us:PostDetailsView/>
+        </DataTemplate>
         <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </Window.Resources>
     <Grid>
@@ -47,10 +53,10 @@
             </ColumnDefinition>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <!-- Кнопка чата - видна только после авторизации -->
+       
 
 
-        <!-- Thumb для изменения размера - тоже скрываем -->
+ 
         <Grid Grid.Column="0"
               Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}">
             <Thumb Width="2" 
@@ -61,22 +67,26 @@
 
             <StackPanel Grid.Column="0" 
             Visibility="{Binding IsLoggedIn, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Button Content="Лента" 
+                 Command="{Binding ShowNewsFeedCommand}" 
+                 Margin="5"
+                 Height="30"/>
                 <Button Content="Профиль" 
                 Command="{Binding ShowProfileCommand}" 
                 Margin="5"
                 Height="30"/>
-                <!-- Кнопка Чаты -->
+ 
                 <Button Content="Чаты" 
             Command="{Binding ShowChatsCommand}" 
             Margin="5"
             Height="30"/>
 
-                <!-- Кнопка Друзья -->
+         
                 <Button Content="Друзья" 
             Command="{Binding ShowFriendsCommand}" 
             Margin="5"
             Height="30"/>
-               
+
             </StackPanel>
         </Grid>
 

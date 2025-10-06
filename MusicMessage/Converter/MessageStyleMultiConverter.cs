@@ -31,7 +31,6 @@ namespace MusicMessage.Converter
 			}
 			catch
 			{
-				// Fallback стиль, если ресурсы не найдены
 				return CreateFallbackStyle(senderId == currentUserId);
 			}
 		}

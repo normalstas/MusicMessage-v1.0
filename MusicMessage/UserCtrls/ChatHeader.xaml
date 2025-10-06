@@ -8,7 +8,6 @@
              Height="60"
              d:DesignWidth="400">
     <UserControl.Resources>
-        <!-- Стиль для кнопок действий -->
         <Style x:Key="BackButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -58,14 +57,12 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Стиль для аватарки -->
         <Style x:Key="AvatarImageStyle" TargetType="Image">
             <Setter Property="Width" Value="40"/>
             <Setter Property="Height" Value="40"/>
             <Setter Property="Stretch" Value="UniformToFill"/>
         </Style>
 
-        <!-- Стиль для кликабельной области (полностью прозрачный) -->
         <Style x:Key="ClickableAreaStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -82,18 +79,17 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <!-- Убрали все триггеры - абсолютно никаких эффектов -->
+
         </Style>
 
-        <!-- Стиль для кликабельного текста -->
         <Style x:Key="ClickableTextStyle" TargetType="TextBlock">
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.WindowTextBrush}}"/>
-            <!-- Убрали триггеры - текст всегда одинаковый -->
+
         </Style>
 
-        <!-- Стиль для статуса -->
+ 
         <Style x:Key="StatusTextStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Foreground" Value="Gray"/>
@@ -107,13 +103,13 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
-                <!-- Кнопка назад -->
+           
                 <ColumnDefinition Width="Auto"/>
-                <!-- Аватарка -->
+           
                 <ColumnDefinition Width="*"/>
-                <!-- Информация -->
+            
                 <ColumnDefinition Width="Auto"/>
-                <!-- Кнопки действий -->
+      
             </Grid.ColumnDefinitions>
 
             <!-- Кнопка назад -->
@@ -124,7 +120,7 @@
                     Command="{Binding BackCommand}"
                     Margin="10,0,5,0"/>
 
-            <!-- Аватарка (кликабельная) -->
+            <!-- Аватарка  -->
             <Button Grid.Column="1"
                     Style="{StaticResource ClickableAreaStyle}"
                     Command="{Binding OpenProfileCommand}"
@@ -147,7 +143,7 @@
                 </Border>
             </Button>
 
-            <!-- Информация о собеседнике (кликабельная) -->
+            <!-- Информация о собеседнике -->
             <Button Grid.Column="2" 
                     Style="{StaticResource ClickableAreaStyle}"
                     Command="{Binding OpenProfileCommand}"

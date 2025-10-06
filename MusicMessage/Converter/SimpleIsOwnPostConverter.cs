@@ -1,5 +1,4 @@
-﻿using MusicMessage.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -10,21 +9,15 @@ using System.Windows;
 
 namespace MusicMessage.Converter
 {
-	public class FriendshipStatusToVisibilityConverter : IValueConverter
+	public class SimpleIsOwnPostConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (parameter == null) return Visibility.Collapsed;
-
-			string param = parameter.ToString();
-
-			if (param == "Null")
+			if (value is int authorId && parameter is int currentUserId)
 			{
-				return value == null ? Visibility.Visible : Visibility.Collapsed;
+				return authorId == currentUserId ? Visibility.Visible : Visibility.Collapsed;
 			}
-
-			
-			return value?.ToString() == param ? Visibility.Visible : Visibility.Collapsed;
+			return Visibility.Collapsed;
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

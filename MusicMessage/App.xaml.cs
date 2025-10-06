@@ -22,7 +22,7 @@ namespace MusicMessage
 
 			ServiceProvider = serviceCollection.BuildServiceProvider();
 
-			var navigationViewModel = ServiceProvider.GetService<NavigationViewModel>(); // Получаем через ServiceProvider
+			var navigationViewModel = ServiceProvider.GetService<NavigationViewModel>(); 
 
 			var mainWindow = ServiceProvider.GetRequiredService<MainWindow>();
 			mainWindow.DataContext = navigationViewModel;
@@ -42,19 +42,21 @@ namespace MusicMessage
 			services.AddTransient<IChatRepository, ChatRepository>();
 			services.AddTransient<IFriendsRepository, FriendsRepository>();
 			services.AddTransient<IProfileRepository, ProfileRepository>();
+			services.AddTransient<IPostRepository, PostRepository>();
 
 			// ViewModels
 			services.AddScoped<FriendsViewModel>();
 			services.AddScoped<LoginViewModel>();
-			services.AddScoped<NavigationViewModel>(); // Регистрируем NavigationViewModel
+			services.AddScoped<NavigationViewModel>();
 			services.AddScoped<ChatsListViewModel>();
 			services.AddScoped<ChatViewModel>();
 			services.AddScoped<ProfileViewModel>();
 			services.AddScoped<EditProfileViewModel>();
-
+			services.AddScoped<NewsFeedViewModel>();
+			services.AddScoped<PostDetailsViewModel>();
 			// Views
 			services.AddTransient<ProfileView>();
-
+			services.AddTransient<PostDetailsView>();
 			// MainWindow
 			services.AddScoped<MainWindow>();
 		}

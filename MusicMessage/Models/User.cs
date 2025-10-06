@@ -64,7 +64,7 @@ public partial class User
 			var birthDate = DateOfBirth.Value;
 			var age = today.Year - birthDate.Year;
 
-			// Проверяем, был ли уже день рождения в этом году
+			//др в этом году
 			if (birthDate > today.AddYears(-age))
 				age--;
 

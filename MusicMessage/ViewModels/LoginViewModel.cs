@@ -33,7 +33,6 @@ namespace MusicMessage.ViewModels
 		[ObservableProperty]
 		private bool _isLoginMode = true;
 
-		// Событие для уведомления о успешном входе
 		public event Action OnLoginSuccessful;
 		[ObservableProperty]
 		private bool _isLoading;
@@ -53,11 +52,10 @@ namespace MusicMessage.ViewModels
 					return;
 				}
 
-				// Показываем индикатор загрузки
 				IsLoading = true;
 
 				var user = await _authService.LoginAsync(Username, Password)
-					.ConfigureAwait(true); // Возвращаемся в UI поток
+					.ConfigureAwait(true); 
 
 				if (user != null)
 				{

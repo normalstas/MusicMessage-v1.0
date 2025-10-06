@@ -22,6 +22,7 @@ public partial class MessangerBaseContext : DbContext
 	public virtual DbSet<Friendship> Friendships { get; set; }
 	public virtual DbSet<Post> Posts { get; set; }
 	public virtual DbSet<PostLike> PostLikes { get; set; }
+	public virtual DbSet<CommentLike> CommentLikes { get; set; }
 	public virtual DbSet<PostComment> PostComments { get; set; }
 	public virtual DbSet<PostShare> PostShares { get; set; }
 
@@ -88,12 +89,12 @@ public partial class MessangerBaseContext : DbContext
 			entity.HasOne(e => e.User)
 				.WithMany()
 				.HasForeignKey(e => e.UserId)
-				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+				.OnDelete(DeleteBehavior.NoAction); 
 
 			entity.HasOne(e => e.OtherUser)
 				.WithMany()
 				.HasForeignKey(e => e.OtherUserId)
-				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+				.OnDelete(DeleteBehavior.NoAction); 
 
 			entity.HasIndex(e => new { e.UserId, e.OtherUserId })
 				.IsUnique();
@@ -110,12 +111,12 @@ public partial class MessangerBaseContext : DbContext
 			entity.HasOne(e => e.User)
 				.WithMany()
 				.HasForeignKey(e => e.UserId)
-				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+				.OnDelete(DeleteBehavior.NoAction); 
 
 			entity.HasOne(e => e.OtherUser)
 				.WithMany()
 				.HasForeignKey(e => e.OtherUserId)
-				.OnDelete(DeleteBehavior.NoAction); // ИЗМЕНИТЕ НА NoAction
+				.OnDelete(DeleteBehavior.NoAction); 
 
 			entity.HasIndex(e => new { e.UserId, e.OtherUserId })
 				.IsUnique();
@@ -151,7 +152,7 @@ public partial class MessangerBaseContext : DbContext
 			entity.HasOne(d => d.Author)
 				.WithMany()
 				.HasForeignKey(d => d.AuthorId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 		});
 
 		modelBuilder.Entity<PostLike>(entity =>
@@ -168,7 +169,7 @@ public partial class MessangerBaseContext : DbContext
 			entity.HasOne(d => d.User)
 				.WithMany()
 				.HasForeignKey(d => d.UserId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 		});
 
 		modelBuilder.Entity<PostComment>(entity =>
@@ -187,12 +188,28 @@ public partial class MessangerBaseContext : DbContext
 			entity.HasOne(d => d.Author)
 				.WithMany()
 				.HasForeignKey(d => d.AuthorId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 
 			entity.HasOne(d => d.ParentComment)
 				.WithMany(p => p.Replies)
 				.HasForeignKey(d => d.ParentCommentId)
-				.OnDelete(DeleteBehavior.ClientCascade);
+				.OnDelete(DeleteBehavior.Restrict);
+		});
+		modelBuilder.Entity<CommentLike>(entity =>
+		{
+			entity.ToTable("CommentLikes");
+
+			entity.HasIndex(e => new { e.CommentId, e.UserId }).IsUnique();
+
+			entity.HasOne(d => d.Comment)
+				.WithMany(p => p.Likes)
+				.HasForeignKey(d => d.CommentId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			entity.HasOne(d => d.User)
+				.WithMany()
+				.HasForeignKey(d => d.UserId)
+				.OnDelete(DeleteBehavior.Restrict);
 		});
 
 		modelBuilder.Entity<PostShare>(entity =>
@@ -210,7 +227,7 @@ public partial class MessangerBaseContext : DbContext
 			entity.HasOne(d => d.User)
 				.WithMany()
 				.HasForeignKey(d => d.UserId)
-				.OnDelete(DeleteBehavior.Cascade);
+				.OnDelete(DeleteBehavior.Restrict);
 		});
 
 		OnModelCreatingPartial(modelBuilder);

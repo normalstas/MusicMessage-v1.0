@@ -12,7 +12,7 @@ namespace MusicMessage.Models
 		public int ReactionId { get; set; }
 		public int MessageId { get; set; }
 		public int UserId { get; set; }
-		public string Emoji { get; set; } // Например, "👍", "❤️", "😂"
+		public string Emoji { get; set; }
 
 		[ForeignKey("MessageId")]
 		public virtual Message Message { get; set; }

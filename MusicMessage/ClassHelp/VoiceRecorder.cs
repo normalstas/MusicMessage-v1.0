@@ -149,7 +149,6 @@ namespace MusicMessage.ClassHelp
 
 		protected override void Dispose(bool disposing)
 		{
-			// Не закрываем исходный поток
 		}
 	}
 }

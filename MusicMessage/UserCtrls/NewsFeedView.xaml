@@ -1,0 +1,203 @@
+﻿<UserControl x:Class="MusicMessage.UserCtrls.NewsFeedView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MusicMessage.UserCtrls"
+             xmlns:conv="clr-namespace:MusicMessage.Converter"
+              xmlns:viewModels="clr-namespace:MusicMessage.ViewModels"
+             xmlns:userCtrls="clr-namespace:MusicMessage.UserCtrls"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <conv:AvatarPathToImageConverter x:Key="AvatarPathToImageConverter"/>
+        <conv:BoolToCollapsedConverter x:Key="BoolToCollapsedConverter"/>
+        <conv:IsOwnPostConverter x:Key="IsOwnPostConverter"/>
+        <conv:PostImageConverter x:Key="PostImageConverter"/>
+        <conv:SimpleIsOwnPostConverter x:Key="SimpleIsOwnPostConverter"/>
+
+        <Style x:Key="PostContainerStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="Margin" Value="0,0,0,15"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+        </Style>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F5F5F5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
+                <!-- Создание нового поста -->
+                <Border Style="{StaticResource PostContainerStyle}" Margin="0,0,0,15">
+                    <StackPanel>
+                        <!-- Заголовок с кнопкой свернуть/развернуть -->
+                        <Grid>
+                            <TextBlock Text="Новый пост" FontSize="16" FontWeight="Bold"/>
+                            <Button Content="{Binding IsPostEditorVisible, Converter={StaticResource BoolToCollapsedConverter}, ConverterParameter='−|+'}" 
+                                    Command="{Binding TogglePostEditorCommand}"
+                                    HorizontalAlignment="Right"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    FontSize="14"
+                                    Padding="5"/>
+                        </Grid>
+
+                        <!-- Содержимое редактора -->
+                        <StackPanel Visibility="{Binding IsPostEditorVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBox Text="{Binding NewPostContent, UpdateSourceTrigger=PropertyChanged}"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     MinHeight="60"
+                                     MaxHeight="120"
+                                     VerticalScrollBarVisibility="Auto"
+                                     Margin="0,10,0,0"/>
+
+                            <!-- Предпросмотр изображения -->
+                            <Image Source="{Binding SelectedImage}"
+                                   MaxHeight="200"
+                                   Stretch="Uniform"
+                                   Margin="0,10,0,0"
+                                   Visibility="{Binding SelectedImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                            <!-- Панель действий -->
+                            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                <Button Content="📷 Фото" 
+                                        Command="{Binding AddImageCommand}"
+                                        Style="{StaticResource ActionButtonStyle}"/>
+
+                                <Button Content="❌ Удалить фото" 
+                                        Command="{Binding RemoveImageCommand}"
+                                        Style="{StaticResource ActionButtonStyle}"
+                                        Visibility="{Binding SelectedImage, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                <Button Content="📤 Опубликовать" 
+                                        Command="{Binding CreatePostCommand}"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        Margin="10,0,0,0"
+                                        Padding="15,5"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Лента постов -->
+                <ItemsControl ItemsSource="{Binding Posts}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource PostContainerStyle}">
+                                <StackPanel>
+                                    <!-- Заголовок поста -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Аватар автора -->
+                                        <Border Width="40" Height="40" CornerRadius="20" Background="LightGray" Grid.Column="0">
+                                            <Image Source="{Binding Author.AvatarPath, Converter={StaticResource AvatarPathToImageConverter}}"
+                                                   Stretch="UniformToFill">
+                                                <Image.Clip>
+                                                    <EllipseGeometry RadiusX="20" RadiusY="20" Center="20,20"/>
+                                                </Image.Clip>
+                                            </Image>
+                                        </Border>
+
+                                        <!-- Информация об авторе -->
+                                        <StackPanel Grid.Column="1" Margin="10,0">
+                                            <TextBlock Text="{Binding Author.FullName}" FontWeight="Bold"/>
+                                            <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:dd.MM.yyyy HH:mm}'}" 
+                                                       Foreground="Gray" FontSize="11"/>
+                                        </StackPanel>
+
+                                        <!-- Кнопка удаления (только для своих постов)-->
+                                        <Button Grid.Column="2" 
+                                                Content="✕" 
+                                                Command="{Binding DataContext.DeletePostCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Удалить пост"
+                                                Visibility="{Binding AuthorId, Converter={StaticResource IsOwnPostConverter}}"
+                                                Style="{StaticResource ActionButtonStyle}"/>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding Content}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+
+                                    <Image Source="{Binding ImagePath, Converter={StaticResource PostImageConverter}}"
+                                           MaxHeight="400"
+                                           Stretch="Uniform"
+                                           Margin="0,10,0,0"
+                                           Visibility="{Binding ImagePath, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <TextBlock Text="{Binding LikesCount}" Foreground="#1976D2" FontWeight="Bold"/>
+                                        <TextBlock Text=" лайков" Margin="5,0,15,0" Foreground="Gray"/>
+                                        <TextBlock Text="{Binding CommentsCount}" Foreground="#1976D2" FontWeight="Bold"/>
+                                        <TextBlock Text=" комментариев" Margin="5,0,0,0" Foreground="Gray"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                        <Button Content="👍 Нравится" 
+                                                Command="{Binding DataContext.ToggleLikeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource ActionButtonStyle}"/>
+
+                                        <Button Content="💬 Комментировать" 
+                                                Command="{Binding DataContext.ShowPostCommentsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource ActionButtonStyle}"
+                                                Margin="10,0,0,0"/>
+
+                                        <Button Content="↻ Поделиться" 
+                                                Command="{Binding DataContext.SharePostCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource ActionButtonStyle}"
+                                                Margin="10,0,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Button Content="Загрузить еще" 
+                        Command="{Binding LoadMorePostsCommand}"
+                        Visibility="{Binding HasMorePosts, Converter={StaticResource BoolToVisibilityConverter}}"
+                        HorizontalAlignment="Center"
+                        Margin="0,10"
+                        Padding="20,10"/>
+
+                <ProgressBar Height="4" 
+                             IsIndeterminate="{Binding IsLoading}"
+                             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                             Margin="0,10"/>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

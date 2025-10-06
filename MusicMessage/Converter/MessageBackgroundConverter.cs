@@ -13,7 +13,7 @@ namespace MusicMessage.Converter
 	{
 		public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
 		{
-			// values[0] - SenderId, values[1] - CurrentUserId
+			
 			if (values.Length == 2 && values[0] is int senderId && values[1] is int currentUserId)
 			{
 				return senderId == currentUserId

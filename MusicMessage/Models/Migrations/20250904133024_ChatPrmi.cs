@@ -32,13 +32,13 @@ namespace MusicMessage.Models.Migrations
 				column: x => x.OtherUserId,
 				principalTable: "User",
 				principalColumn: "UserId",
-				onDelete: ReferentialAction.NoAction); // ИЗМЕНИТЕ НА NoAction
+				onDelete: ReferentialAction.NoAction);
 			table.ForeignKey(
 				name: "FK_ChatPreviews_User_UserId",
 				column: x => x.UserId,
 				principalTable: "User",
 				principalColumn: "UserId",
-				onDelete: ReferentialAction.NoAction); // ИЗМЕНИТЕ НА NoAction
+				onDelete: ReferentialAction.NoAction); 
 		});
 
 			migrationBuilder.CreateIndex(

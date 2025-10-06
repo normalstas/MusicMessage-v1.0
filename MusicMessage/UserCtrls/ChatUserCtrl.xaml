@@ -19,7 +19,6 @@
             <Setter Property="HorizontalContentAlignment" Value="Right"/>
             <Setter Property="Padding" Value="0,2,5,2"/>
             <Setter Property="ContextMenu" Value="{x:Null}"/>
-            <!-- Отключаем контекстное меню у элементов -->
         </Style>
         <Style x:Key="EditMenuItemStyle" TargetType="MenuItem">
             <Setter Property="Foreground" Value="#2E7D32"/>
@@ -29,9 +28,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Left"/>
             <Setter Property="Padding" Value="5,2,0,2"/>
             <Setter Property="ContextMenu" Value="{x:Null}"/>
-            <!-- Отключаем контекстное меню у элементов -->
         </Style>
-        <!-- Стили для контейнеров сообщений -->
         <Style x:Key="VoiceMessageButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
@@ -132,7 +129,6 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="ToolTip" Value="Перейти к сообщению"/>
             <Style.Triggers>
-                <!-- Анимация при наведении -->
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="#FFD4E6F1"/>
                     <Setter Property="BorderBrush" Value="#FF64B5F6"/>
@@ -150,14 +146,13 @@
                         <Border Background="{TemplateBinding Background}"
                         CornerRadius="12"
                         Padding="3,2">
-                            <!-- Orientation="Vertical" - эмодзи СВЕРХУ, никнейм СНИЗУ -->
                             <StackPanel Orientation="Vertical" 
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Emoji}" 
                                    FontSize="14"
                                    HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding User.UserName}" 
+                                <TextBlock Text="{Binding User.FirstName}" 
                                    FontSize="9"
                                    Foreground="Gray"
                                    HorizontalAlignment="Center"
@@ -174,21 +169,20 @@
             </Style.Triggers>
         </Style>
         <Storyboard x:Key="PulseAnimation" x:Name="PulseAnimation" RepeatBehavior="Forever">
-            <!-- Пульсация opacity -->
+
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.Opacity)">
                 <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0.9"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:0.7" Value="1"/>
                 <EasingDoubleKeyFrame KeyTime="0:0:1.4" Value="0.9"/>
             </DoubleAnimationUsingKeyFrames>
 
-            <!-- Пульсация фона -->
+
             <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)">
                 <EasingColorKeyFrame KeyTime="0:0:0" Value="#FFE9F5FF"/>
                 <EasingColorKeyFrame KeyTime="0:0:0.7" Value="#FFBBDEFB"/>
                 <EasingColorKeyFrame KeyTime="0:0:1.4" Value="#FFE9F5FF"/>
             </ColorAnimationUsingKeyFrames>
 
-            <!-- Пульсация границы -->
             <ColorAnimationUsingKeyFrames Storyboard.TargetProperty="(Border.BorderBrush).(SolidColorBrush.Color)">
                 <EasingColorKeyFrame KeyTime="0:0:0" Value="#FFBBDEFB"/>
                 <EasingColorKeyFrame KeyTime="0:0:0.7" Value="#FF2196F3"/>
@@ -221,7 +215,6 @@
                 <EasingDoubleKeyFrame KeyTime="0:0:0.2" Value="0.5"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
-        <!-- Конвертеры -->
         <conv:MessageStyleMultiConverter x:Key="MessageStyleMultiConverter"/>
         <conv:ShowUserNameConverter x:Key="ShowUserNameConverter"/>
         <conv:MessageAlignmentConverter x:Key="MessageAlignmentConverter"/>
@@ -235,7 +228,6 @@
         <conv:ReplyVisibilityConverter x:Key="ReplyVisibilityConverter"/>
         <conv:EditedIndicatorConverter x:Key="EditedIndicatorConverter"/>
 
-        <!-- Шаблон сообщения -->
         <DataTemplate DataType="{x:Type models:Message}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -282,7 +274,6 @@
                         </StackPanel>
                     </Grid>
                 </Border>
-                <!-- Текстовое сообщение -->
                 <Border x:Name="TextMessageTemplate"
         CornerRadius="10"
         Padding="10" Grid.Row="1"
@@ -299,7 +290,6 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Основное содержимое сообщения -->
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="{Binding Sender.FirstName}" FontWeight="Bold">
                                 <TextBlock.Visibility>
@@ -312,7 +302,7 @@
 
                             <TextBlock Text="{Binding ContentMess}" TextWrapping="Wrap"/>
 
-                            <!-- Время и иконка редактирования -->
+
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -337,12 +327,12 @@
                             </Grid>
                         </StackPanel>
 
-                        <!-- Реакции сбоку -->
+
                         <ItemsControl Grid.Column="1"
               ItemsSource="{Binding Reactions}"
               Margin="5,0,0,0"
               VerticalAlignment="Bottom">
-                            <!-- ИЗМЕНИТЕ на Orientation="Horizontal" -->
+
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal" MaxWidth="200"/>
@@ -382,14 +372,14 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Основное содержимое голосового сообщения -->
+
                         <Grid Grid.Column="0">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Первая строка: кнопка, волны, длительность -->
+
                             <Grid Grid.Row="0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
@@ -454,7 +444,7 @@
                                 </TextBlock>
                             </Grid>
 
-                            <!-- Вторая строка: время сообщения -->
+
                             <TextBlock Grid.Row="1"
                        Text="{Binding Timestamp, StringFormat='{}{0:dd.MM HH:mm}'}" 
                        FontSize="10" 
@@ -463,12 +453,12 @@
                        Margin="0,5,0,0"/>
                         </Grid>
 
-                        <!-- Реакции сбоку -->
+                        <!-- Реакции -->
                         <ItemsControl Grid.Column="1"
               ItemsSource="{Binding Reactions}"
               Margin="5,0,0,0"
               VerticalAlignment="Bottom">
-                            <!-- ИЗМЕНИТЕ на Orientation="Horizontal" -->
+
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal" MaxWidth="200"/>
@@ -551,7 +541,6 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Индикатор режима редактирования -->
             <TextBlock Text="Режим редактирования..."
                Foreground="Blue"
                FontStyle="Italic"
@@ -568,7 +557,7 @@
              VerticalScrollBarVisibility="Auto"
              Visibility="{Binding ShowTextInput, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <!-- Визуализация волн во время записи -->
+
             <ItemsControl Grid.Column="0"
                   ItemsSource="{Binding RecordingWaveformData}"
                   Style="{StaticResource WaveformStyle}"
@@ -631,9 +620,9 @@
                Foreground="#555555"
                Visibility="{Binding IsRecording, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-            <!-- Контейнер для кнопок записи/остановки -->
+
             <Grid Grid.Column="1" Margin="5,0,0,0" Width="100">
-                <!-- Кнопка записи (исчезает при начале записи И во время редактирования) -->
+
                 <Button Content="🎤" 
             Command="{Binding StartRecordingCommand}"
             Width="100"
@@ -641,7 +630,7 @@
             FontSize="14"
             Visibility="{Binding ShowRecordingButton, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
-                <!-- Кнопка остановки (появляется вместо кнопки записи) -->
+                <!-- Кнопка остановки -->
                 <Button Content="⏹" 
             Command="{Binding StopRecordingCommand}"
             Width="100"
@@ -650,7 +639,7 @@
             Visibility="{Binding IsRecording, Converter={StaticResource BoolToVisibilityConverter}}"/>
             </Grid>
 
-            <!-- Кнопка отправки текста (обычный режим) -->
+            <!-- Кнопка отправки текста-->
             <Button Grid.Column="2" 
             Content="➤" 
             Command="{Binding SendTextCommand}"

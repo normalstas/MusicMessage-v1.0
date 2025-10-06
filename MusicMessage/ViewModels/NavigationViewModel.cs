@@ -22,16 +22,31 @@ namespace MusicMessage.ViewModels
 		private readonly LoginViewModel _loginViewModel;
 		private readonly IServiceProvider _serviceProvider;
 		private ProfileViewModel _currentProfileViewModel;
+		private readonly NewsFeedViewModel _newsFeedViewModel;
+		private readonly PostDetailsViewModel _postDetailsViewModel;
+
 		[ObservableProperty]
 		private bool _isLoggedIn;
 
+		[ObservableProperty]
+		private bool _isPostDetailsVisible;
+
+		
+		private int _lastProfileId;
 		public NavigationViewModel(IAuthService authService, LoginViewModel loginViewModel,
-		IServiceProvider serviceProvider, FriendsViewModel friendsViewModel)
+			IServiceProvider serviceProvider, FriendsViewModel friendsViewModel, IPostRepository postRepository)
 		{
 			_authService = authService;
 			_loginViewModel = loginViewModel;
 			_serviceProvider = serviceProvider;
 			_isLoggedIn = _authService.IsLoggedIn;
+
+			_newsFeedViewModel = serviceProvider.GetService<NewsFeedViewModel>();
+			_postDetailsViewModel = serviceProvider.GetService<PostDetailsViewModel>();
+
+			
+			_postDetailsViewModel.ClosePostDetailsRequested += OnClosePostDetails;
+			_newsFeedViewModel.ShowPostDetailsRequested += OnShowPostDetails;
 
 			friendsViewModel.OnChatRequested += OnChatRequestedFromFriends;
 			friendsViewModel.OnProfileRequested += OnProfileRequestedFromFriends;
@@ -39,14 +54,142 @@ namespace MusicMessage.ViewModels
 
 			CurrentView = _loginViewModel;
 		}
+
+		private async Task ShowPostDetailsAsync(int postId, bool fromProfile = false, int profileId = 0)
+		{
+			if (!_authService.IsLoggedIn) return;
+
+			try
+			{
+				await _postDetailsViewModel.LoadPostDetailsAsync(postId);
+				_postDetailsViewModel.SetSource(fromProfile, profileId);
+				CurrentView = _postDetailsViewModel;
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Ошибка открытия поста: {ex.Message}");
+			}
+		}
+		private async void OnShowPostDetails(int postId)
+		{
+			await ShowPostDetailsAsync(postId, false);
+		}
+
+
+		private async void OnShowPostDetailsFromProfile(int postId)
+		{
+			
+			int profileId = _currentProfileViewModel?.ViewedUser?.UserId ?? 0;
+			await ShowPostDetailsAsync(postId, true, profileId);
+		}
+
+		private void OnClosePostDetails(bool fromProfile, int profileId)
+		{
+			if (fromProfile && profileId > 0)
+			{
+				
+				_ = ShowFriendProfile(profileId);
+			}
+			else
+			{
+				
+				ShowNewsFeed();
+			}
+		}
+
+		[RelayCommand]
+		private async Task ShowNewsFeed()
+		{
+			if (_authService.IsLoggedIn)
+			{
+				await _newsFeedViewModel.LoadNewsFeedAsync();
+				CurrentView = _newsFeedViewModel;
+			}
+		}
+
+		[RelayCommand]
+		private async Task ShowProfile()
+		{
+			if (!_authService.IsLoggedIn || _authService.CurrentUser == null) return;
+
+			var profileVM = _serviceProvider.GetService<ProfileViewModel>();
+			if (profileVM != null)
+			{
+				if (_currentProfileViewModel != null)
+				{
+					_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
+					_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
+					_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
+					_currentProfileViewModel.ShowPostDetailsRequested -= OnShowPostDetailsFromProfile;
+				}
+
+				await profileVM.LoadProfileAsync(_authService.CurrentUser.UserId);
+
+				profileVM.OnEditRequested += OnEditProfileRequested;
+				profileVM.OnChatRequested += OnChatRequestedFromProfile;
+				profileVM.OnProfileRequested += OnProfileRequestedFromProfile;
+				profileVM.ShowPostDetailsRequested += OnShowPostDetailsFromProfile;
+
+				_currentProfileViewModel = profileVM;
+				CurrentView = profileVM;
+			}
+		}
+
+		[RelayCommand]
+		private async Task ShowFriendProfile(int userId)
+		{
+			try
+			{
+				if (!_authService.IsLoggedIn || _authService.CurrentUser == null) return;
+
+				var profileVM = _serviceProvider.GetService<ProfileViewModel>();
+				if (profileVM != null)
+				{
+					if (_currentProfileViewModel != null)
+					{
+						_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
+						_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
+						_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
+						_currentProfileViewModel.ShowPostDetailsRequested -= OnShowPostDetailsFromProfile;
+					}
+
+					await profileVM.LoadProfileAsync(userId);
+
+					profileVM.OnEditRequested += OnEditProfileRequested;
+					profileVM.OnChatRequested += OnChatRequestedFromProfile;
+					profileVM.OnProfileRequested += OnProfileRequestedFromProfile;
+					profileVM.ShowPostDetailsRequested += OnShowPostDetailsFromProfile;
+
+					_currentProfileViewModel = profileVM;
+					CurrentView = profileVM;
+				}
+			}
+			catch (Exception ex)
+			{
+				MessageBox.Show($"Ошибка открытия профиля: {ex.Message}");
+			}
+		}
 		private async void OnProfileRequestedFromProfile(int userId)
 		{
 			await ShowFriendProfile(userId);
 		}
+
 		private async void OnChatRequestedFromProfile(int receiverId)
 		{
 			await OpenChatWithUser(receiverId);
 		}
+
+		[RelayCommand]
+		private async Task ShowPostCommentsAsync(Post post)
+		{
+			if (post == null) return;
+
+			_postDetailsViewModel.Open(post);
+			IsPostDetailsVisible = true;
+
+			await _postDetailsViewModel.LoadCommentsAsync();
+		}
+
 		private async Task OpenChatWithUser(int receiverId)
 		{
 			var chatViewModel = _serviceProvider.GetService<ChatViewModel>();
@@ -57,6 +200,7 @@ namespace MusicMessage.ViewModels
 
 			await Task.Delay(50);
 		}
+
 		private async void OnChatRequestedFromFriends(int otherUserId)
 		{
 			var chatViewModel = _serviceProvider.GetService<ChatViewModel>();
@@ -67,10 +211,12 @@ namespace MusicMessage.ViewModels
 
 			await Task.Delay(50);
 		}
+
 		private async void OnProfileRequestedFromFriends(int userId)
 		{
 			await ShowFriendProfile(userId);
 		}
+
 		~NavigationViewModel()
 		{
 			var friendsViewModel = _serviceProvider.GetService<FriendsViewModel>();
@@ -85,6 +231,7 @@ namespace MusicMessage.ViewModels
 				profileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
 			}
 		}
+
 		private void OnLoginSuccessful()
 		{
 			IsLoggedIn = true;
@@ -95,39 +242,12 @@ namespace MusicMessage.ViewModels
 		{
 			ShowChats();
 		}
-		[RelayCommand]
-		private async Task ShowProfile()
-		{
-			if (!_authService.IsLoggedIn) return;
 
-			var profileVM = _serviceProvider.GetService<ProfileViewModel>();
-			if (profileVM != null)
-			{
-				// Отписываемся от предыдущего экземпляра
-				if (_currentProfileViewModel != null)
-				{
-					_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
-					_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
-					_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
-				}
-
-				await profileVM.LoadProfileAsync(_authService.CurrentUser.UserId);
-
-				// Подписываемся на события нового экземпляра
-				profileVM.OnEditRequested += OnEditProfileRequested;
-				profileVM.OnChatRequested += OnChatRequestedFromProfile;
-				profileVM.OnProfileRequested += OnProfileRequestedFromProfile;
-
-				_currentProfileViewModel = profileVM; // Сохраняем ссылку
-				CurrentView = profileVM;
-			}
-		}
 		private void OnEditProfileRequested()
 		{
 			var editVM = _serviceProvider.GetService<EditProfileViewModel>();
 			if (editVM != null)
 			{
-				// Загружаем изображения при инициализации
 				editVM.LoadImages();
 				editVM.OnProfileSaved += OnProfileSaved;
 				editVM.OnCancelled += OnEditCancelled;
@@ -142,16 +262,13 @@ namespace MusicMessage.ViewModels
 				var profileVM = _serviceProvider.GetService<ProfileViewModel>();
 				if (profileVM != null)
 				{
-					// СБРАСЫВАЕМ кэш изображений ПРАВИЛЬНО
 					profileVM.AvatarImage = null;
 					profileVM.CoverImage = null;
 
-					// ПЕРЕЗАГРУЖАЕМ данные
 					await profileVM.LoadProfileAsync(_authService.CurrentUser.UserId);
 					profileVM.OnEditRequested += OnEditProfileRequested;
 					CurrentView = profileVM;
 
-					// Принудительное обновление
 					profileVM.OnPropertyChanged(nameof(profileVM.AvatarImage));
 					profileVM.OnPropertyChanged(nameof(profileVM.CoverImage));
 				}
@@ -164,48 +281,14 @@ namespace MusicMessage.ViewModels
 
 		private async void OnEditCancelled()
 		{
-			// Восстанавливаем оригинальные данные
 			var profileVM = _serviceProvider.GetService<ProfileViewModel>();
 			if (profileVM != null)
 			{
-				// ПЕРЕЗАГРУЖАЕМ данные из базы, чтобы восстановить оригинальные значения
 				await profileVM.LoadProfileAsync(_authService.CurrentUser.UserId);
 				CurrentView = profileVM;
 			}
 		}
-		// Также добавь метод для открытия профиля друга
-		[RelayCommand]
-		private async Task ShowFriendProfile(int userId)
-		{
-			try
-			{
-				var profileVM = _serviceProvider.GetService<ProfileViewModel>();
-				if (profileVM != null)
-				{
-					// Отписываемся от предыдущего экземпляра
-					if (_currentProfileViewModel != null)
-					{
-						_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
-						_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
-						_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
-					}
 
-					await profileVM.LoadProfileAsync(userId);
-
-					// Подписываемся на события нового экземпляра
-					profileVM.OnEditRequested += OnEditProfileRequested;
-					profileVM.OnChatRequested += OnChatRequestedFromProfile;
-					profileVM.OnProfileRequested += OnProfileRequestedFromProfile;
-
-					_currentProfileViewModel = profileVM; // Сохраняем ссылку
-					CurrentView = profileVM;
-				}
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show($"Ошибка открытия профиля: {ex.Message}");
-			}
-		}
 		private async void OnChatSelected(int receiverId)
 		{
 			var chatViewModel = _serviceProvider.GetService<ChatViewModel>();
@@ -215,9 +298,9 @@ namespace MusicMessage.ViewModels
 			CurrentView = chatViewModel;
 			await Task.Delay(50);
 
-			// Обновляем шапку чата
 			await chatViewModel.UpdateChatHeaderInfo();
 		}
+
 		[RelayCommand]
 		private void ShowChats()
 		{
@@ -229,11 +312,11 @@ namespace MusicMessage.ViewModels
 					chatsListVM.OnChatSelected += OnChatSelected;
 					CurrentView = chatsListVM;
 
-					// ОБНОВЛЯЕМ чаты при переходе
 					_ = chatsListVM.LoadChatsAsync();
 				}
 			}
 		}
+
 		[RelayCommand]
 		private void ShowFriends()
 		{
@@ -252,6 +335,7 @@ namespace MusicMessage.ViewModels
 				}
 			}
 		}
+
 		public void Dispose()
 		{
 			var friendsViewModel = _serviceProvider.GetService<FriendsViewModel>();
@@ -266,8 +350,8 @@ namespace MusicMessage.ViewModels
 				_currentProfileViewModel.OnEditRequested -= OnEditProfileRequested;
 				_currentProfileViewModel.OnChatRequested -= OnChatRequestedFromProfile;
 				_currentProfileViewModel.OnProfileRequested -= OnProfileRequestedFromProfile;
+				_currentProfileViewModel.ShowPostDetailsRequested -= OnShowPostDetailsFromProfile;
 			}
 		}
 	}
-
 }

@@ -18,7 +18,6 @@ namespace MusicMessage.Repository
 		Task AddTextMessageAsync(string text, int senderId, int receiverId);
 		Task AddVoiceMessageAsync(string audioPath, TimeSpan duration, int senderId, int receiverId);
 		Task AddStickerMessageAsync(string sticer, int senderId, int receiverId);
-		//Task AddReactionAsync(int messageId, string emoji);
 		Task UpdateMessageAsync(Message message);
 		Task SaveWaveformDataAsync(int messageId, List<double> waveform);
 		Task<List<double>> GetWaveformDataAsync(int messageId);
@@ -53,7 +52,7 @@ namespace MusicMessage.Repository
 			{
 				ContentMess = text,
 				SenderId = senderId,
-				ReceiverId = receiverId, // Добавляем получателя
+				ReceiverId = receiverId,
 				MessageType = "Text",
 				Timestamp = DateTime.Now
 			};
@@ -65,13 +64,13 @@ namespace MusicMessage.Repository
 			using var context = _contextFactory.CreateDbContext();
 			var message = new Message
 			{
-				MessageType = "Voice", // Явно указываем тип
+				MessageType = "Voice",
 				AudioPath = audioPath,
 				Duration = duration,
 				SenderId = senderId,
 				ReceiverId = receiverId,
 				Timestamp = DateTime.Now,
-				ContentMess = "" // Очищаем текстовое содержимое
+				ContentMess = "" 
 			};	
 			await context.Messages.AddAsync(message);
 			await context.SaveChangesAsync();
@@ -96,7 +95,7 @@ namespace MusicMessage.Repository
 			if (message != null)
 			{
 				message.ContentMess = newText;
-				// Не обновляем Timestamp!
+				
 				await context.SaveChangesAsync();
 			}
 		}
@@ -125,8 +124,8 @@ namespace MusicMessage.Repository
 			return await context.Messages
 				.Include(m => m.Sender)
 				.Include(m => m.Receiver)
-				.Include(m => m.ReplyToMessage)  // Это критически важно!
-					.ThenInclude(rm => rm.Sender) // И это тоже!
+				.Include(m => m.ReplyToMessage)  
+					.ThenInclude(rm => rm.Sender) 
 				.FirstOrDefaultAsync(m => m.MessageId == messageId);
 		}
 		public async Task UpdateMessageReadStatusAsync(int messageId, bool isRead)
@@ -200,7 +199,7 @@ namespace MusicMessage.Repository
 			{
 				message.IsDeletedForEveryone = true;
 
-				// Для голосовых сообщений удаляем файлы
+				
 				if (message.IsVoiceMessage && !string.IsNullOrEmpty(message.AudioPath))
 				{
 					try
@@ -213,7 +212,7 @@ namespace MusicMessage.Repository
 					}
 					catch
 					{
-						// Игнорируем ошибки удаления файла
+						
 					}
 				}
 			}
@@ -223,19 +222,18 @@ namespace MusicMessage.Repository
 		public async Task AddOrUpdateReactionAsync(int messageId, int userId, string emoji)
 		{
 			using var context = _contextFactory.CreateDbContext();
-			// Находим существующую реакцию пользователя на это сообщение
 			var existingReaction = await context.Reactions
 				.FirstOrDefaultAsync(r => r.MessageId == messageId && r.UserId == userId);
 
 			if (existingReaction != null)
 			{
-				// Если реакция уже есть - меняем эмодзи
+				
 				existingReaction.Emoji = emoji;
 				context.Reactions.Update(existingReaction);
 			}
 			else
 			{
-				// Если реакции нет - создаем новую
+				
 				var newReaction = new Reaction
 				{
 					MessageId = messageId,
@@ -267,9 +265,9 @@ namespace MusicMessage.Repository
 			if (messageIds == null || !messageIds.Any())
 				return new Dictionary<int, List<Reaction>>();
 
-			// Убедитесь, что загружаются актуальные данные из базы
+			
 			var reactions = await context.Reactions
-	   .Include(r => r.User) // КРИТИЧЕСКИ ВАЖНО
+	   .Include(r => r.User) 
 	   .Where(r => messageIds.Contains(r.MessageId))
 	   .ToListAsync();
 
@@ -321,7 +319,7 @@ namespace MusicMessage.Repository
 			await context.Messages.AddAsync(message);
 			await context.SaveChangesAsync();
 
-			// Возвращаем ID сохраненного сообщения
+			
 			return message.MessageId;
 		}
 		public async Task<IEnumerable<Message>> GetAllMessagesAsync(int senderId, int receiverId)
@@ -346,7 +344,7 @@ namespace MusicMessage.Repository
 					.OrderByDescending(m => m.Timestamp)
 					.Take(100)
 					.OrderBy(m => m.Timestamp)
-					.AsNoTracking() // ДОБАВЬТЕ ЭТО
+					.AsNoTracking() 
 					.ToListAsync();
 
 				return messages ?? new List<Message>();

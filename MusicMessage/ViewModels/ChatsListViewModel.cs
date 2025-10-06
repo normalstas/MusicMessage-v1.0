@@ -46,7 +46,7 @@ namespace MusicMessage.ViewModels
 			await LoadChatsAsync();
 		}
 
-		// Метод для вызова при деактивации представления  
+		
 		public void OnViewDeactivated()
 		{
 			_isViewActive = false;
@@ -60,17 +60,17 @@ namespace MusicMessage.ViewModels
 			IsLoading = true;
 			try
 			{
-				// ОБНОВЛЯЕМ все чаты с актуальными сообщениями
+				
 				var chatRepository = App.ServiceProvider.GetService<IChatRepository>();
 				if (chatRepository != null)
 				{
 					await chatRepository.UpdateAllChatsLastMessagesAsync(_authService.CurrentUser.UserId);
 				}
 
-				// ЗАГРУЖАЕМ обновленные чаты
+			
 				var chats = await _chatRepository.GetUserChatsAsync(_authService.CurrentUser.UserId);
 
-				// ОБНОВЛЯЕМ КОЛЛЕКЦИЮ
+				
 				await Application.Current.Dispatcher.InvokeAsync(() =>
 				{
 					Chats.Clear();
@@ -82,7 +82,7 @@ namespace MusicMessage.ViewModels
 			}
 			catch (Exception ex)
 			{
-				// Более информативное сообщение об ошибке
+				
 				MessageBox.Show($"Ошибка загрузки чатов: {ex.Message}\n\n" +
 							   "Это может быть связано с параллельными изменениями в базе данных. " +
 							   "Попробуйте обновить список чатов.");
@@ -99,7 +99,7 @@ namespace MusicMessage.ViewModels
 			if (chat != null)
 			{
 				OnChatSelected?.Invoke(chat.OtherUserId);
-				SelectedChat = chat; // Убедитесь, что выбранный чат устанавливается
+				SelectedChat = chat;
 			}
 		}
 

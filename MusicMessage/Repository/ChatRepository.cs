@@ -36,7 +36,7 @@ namespace MusicMessage.Repository
 			var otherUser = await context.Users.FindAsync(otherUserId).ConfigureAwait(false);
 			if (otherUser == null) return;
 
-			// Проверяем и создаем чат для ОТПРАВИТЕЛЯ (userId)
+			
 			var existingChatForSender = await context.ChatPreviews
 				.FirstOrDefaultAsync(c => c.UserId == userId && c.OtherUserId == otherUserId)
 				.ConfigureAwait(false);
@@ -58,7 +58,7 @@ namespace MusicMessage.Repository
 				context.ChatPreviews.Add(newChatForSender);
 			}
 
-			// Проверяем и создаем чат для ПОЛУЧАТЕЛЯ (otherUserId)
+			
 			var existingChatForReceiver = await context.ChatPreviews
 				.FirstOrDefaultAsync(c => c.UserId == otherUserId && c.OtherUserId == userId)
 				.ConfigureAwait(false);
@@ -91,7 +91,7 @@ namespace MusicMessage.Repository
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			// Получаем ID всех чатов пользователя
+			
 			var chatIds = await context.ChatPreviews
 				.Where(c => c.UserId == userId)
 				.Select(c => c.ChatPreviewId)
@@ -101,7 +101,7 @@ namespace MusicMessage.Repository
 			{
 				try
 				{
-					// Находим чат в текущем контексте для обновления
+					
 					var chat = await context.ChatPreviews.FindAsync(chatId);
 					if (chat == null) continue;
 
@@ -143,7 +143,7 @@ namespace MusicMessage.Repository
 					}
 					else
 					{
-						// Если сообщений нет, но чат существует - устанавливаем значения по умолчанию
+						
 						chat.LastMessage = "Чат начат";
 						chat.LastMessageTime = DateTime.Now;
 					}
@@ -161,7 +161,7 @@ namespace MusicMessage.Repository
 			}
 			catch (DbUpdateConcurrencyException ex)
 			{
-				// Обрабатываем ошибки параллелизма
+				
 				foreach (var entry in ex.Entries)
 				{
 					entry.State = EntityState.Detached;
@@ -178,9 +178,9 @@ namespace MusicMessage.Repository
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			// Получаем все чаты пользователя только для чтения
+			
 			var userChats = await context.ChatPreviews
-	   .Include(c => c.OtherUser) // Убедитесь, что это есть
+	   .Include(c => c.OtherUser) 
 	   .Where(c => c.UserId == userId)
 	   .AsNoTracking()
 	   .ToListAsync();
@@ -190,14 +190,14 @@ namespace MusicMessage.Repository
 
 			foreach (var chat in userChats)
 			{
-				// Заполняем недостающие данные из OtherUser
+				
 				if (string.IsNullOrEmpty(chat.FirstName) || string.IsNullOrEmpty(chat.LastName))
 				{
 					chat.FirstName = chat.OtherUser?.FirstName;
 					chat.LastName = chat.OtherUser?.LastName;
 				}
 
-				// Проверяем, есть ли НЕУДАЛЕННЫЕ сообщения в чате
+				
 				var hasNonDeletedMessages = await context.Messages
 					.AsNoTracking()
 					.AnyAsync(m => ((m.SenderId == userId && m.ReceiverId == chat.OtherUserId) ||
@@ -216,7 +216,7 @@ namespace MusicMessage.Repository
 				}
 			}
 
-			// Удаляем чаты без сообщений в ОТДЕЛЬНОЙ операции
+			
 			if (chatsToDeleteIds.Any())
 			{
 				await DeleteChatsWithoutMessages(chatsToDeleteIds);
@@ -228,7 +228,7 @@ namespace MusicMessage.Repository
 		{
 			using var deleteContext = _contextFactory.CreateDbContext();
 
-			// Находим чаты для удаления в этом контексте
+			
 			var chatsToDelete = await deleteContext.ChatPreviews
 				.Where(c => chatIdsToDelete.Contains(c.ChatPreviewId))
 				.ToListAsync();
@@ -243,7 +243,7 @@ namespace MusicMessage.Repository
 				}
 				catch (DbUpdateConcurrencyException ex)
 				{
-					// Игнорируем ошибки параллелизма - чаты уже могли быть удалены
+					
 					foreach (var entry in ex.Entries)
 					{
 						entry.State = EntityState.Detached;
@@ -251,7 +251,7 @@ namespace MusicMessage.Repository
 				}
 				catch (DbUpdateException ex)
 				{
-					// Логируем ошибку, но не прерываем выполнение
+					
 					Debug.WriteLine($"Ошибка удаления чатов: {ex.Message}");
 				}
 			}
@@ -295,12 +295,12 @@ namespace MusicMessage.Repository
 			}
 			else
 			{
-				// Если сообщений нет, но чат остался (например, только что созданный)
+				
 				chat.LastMessage = "Чат начат";
 				chat.LastMessageTime = DateTime.Now;
 			}
 
-			// Сохраняем изменения
+			
 			context.ChatPreviews.Update(chat);
 		}
 
@@ -310,14 +310,13 @@ namespace MusicMessage.Repository
 
 			try
 			{
-				// ПРАВИЛЬНЫЙ подсчет - только непрочитанные сообщения ОТ собеседника
-				// которые НЕ удалены для получателя
+			
 				var unreadCount = await context.Messages
-					.CountAsync(m => m.SenderId == otherUserId &&   // ОТ собеседника
-								   m.ReceiverId == userId &&        // МНЕ
-								   !m.IsRead &&                    // НЕ прочитано
-								   !m.IsDeletedForEveryone &&      // НЕ удалено для всех
-								   !(m.IsDeletedForReceiver && m.ReceiverId == userId)) // НЕ удалено для меня
+					.CountAsync(m => m.SenderId == otherUserId &&   
+								   m.ReceiverId == userId &&      
+								   !m.IsRead &&                   
+								   !m.IsDeletedForEveryone &&     
+								   !(m.IsDeletedForReceiver && m.ReceiverId == userId)) 
 					.ConfigureAwait(false);
 
 				return unreadCount;
@@ -348,7 +347,7 @@ namespace MusicMessage.Repository
 
 			if (chat == null)
 			{
-				// Создаем новый чат
+				
 				var otherUser = await context.Users.FindAsync(userId2);
 				chat = new ChatPreview
 				{
@@ -364,7 +363,7 @@ namespace MusicMessage.Repository
 		public async Task UpdateChatUnreadCountAsync(int userId, int otherUserId, int unreadCount)
 		{
 			using var context = _contextFactory.CreateDbContext();
-			// НАЙДИТЕ И ОБНОВИТЕ ChatPreview в базе данных
+		
 			var chatPreview = await context.ChatPreviews
 				.FirstOrDefaultAsync(c => c.UserId == userId && c.OtherUserId == otherUserId);
 
@@ -375,7 +374,7 @@ namespace MusicMessage.Repository
 			}
 			else
 			{
-				// Если чата нет, создаем его
+				
 				var otherUser = await context.Users.FindAsync(otherUserId);
 				if (otherUser != null)
 				{

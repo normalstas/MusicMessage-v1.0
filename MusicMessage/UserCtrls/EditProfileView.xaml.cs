@@ -28,7 +28,6 @@ namespace MusicMessage.UserCtrls
 		{
 			if (DataContext is EditProfileViewModel vm)
 			{
-				// Подписываемся на изменение режима редактирования
 				vm.PropertyChanged += (s, args) =>
 				{
 					if (args.PropertyName == nameof(vm.IsCoverEditingMode) && vm.IsCoverEditingMode)
@@ -47,7 +46,6 @@ namespace MusicMessage.UserCtrls
 					}
 				};
 
-				// События для ОБЛОЖКИ
 				CoverCropper.OnImageCropped += (croppedPath) =>
 				{
 					vm.SaveCroppedCoverCommand.Execute(croppedPath);
@@ -57,7 +55,6 @@ namespace MusicMessage.UserCtrls
 					vm.CancelCoverEditCommand.Execute(null);
 				};
 
-				// События для АВАТАРА
 				AvatarCropper.OnImageCropped += (croppedPath) =>
 				{
 					vm.SaveCroppedAvatarCommand.Execute(croppedPath);
@@ -73,7 +70,6 @@ namespace MusicMessage.UserCtrls
 		{
 			if (e.Property == DataContextProperty && DataContext is EditProfileViewModel vm)
 			{
-				// Для обложки
 				if (vm.IsCoverEditingMode && !string.IsNullOrEmpty(vm.SelectedCoverPath))
 				{
 					Dispatcher.BeginInvoke(new Action(() =>
@@ -81,7 +77,6 @@ namespace MusicMessage.UserCtrls
 						CoverCropper?.LoadImage(vm.SelectedCoverPath);
 					}), System.Windows.Threading.DispatcherPriority.Loaded);
 				}
-				// Для аватарки
 				if (vm.IsAvatarEditingMode && !string.IsNullOrEmpty(vm.SelectedAvatarPath))
 				{
 					Dispatcher.BeginInvoke(new Action(() =>

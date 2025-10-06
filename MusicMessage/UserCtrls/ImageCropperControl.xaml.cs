@@ -12,8 +12,8 @@ namespace MusicMessage.UserCtrls
 {
 	public enum ImageCropMode
 	{
-		Free,             // Свободное соотношение
-		FixedAspectRatio  // Фиксированное соотношение сторон
+		Free,             
+		FixedAspectRatio  
 	}
 	public partial class ImageCropperControl : UserControl
 	{
@@ -66,7 +66,6 @@ namespace MusicMessage.UserCtrls
 			set => SetValue(TargetAspectRatioProperty, value);
 		}
 
-		// Обработчики изменения свойств
 		private static void OnCropModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
 		{
 			if (d is ImageCropperControl control)
@@ -90,7 +89,6 @@ namespace MusicMessage.UserCtrls
 
 		private void UpdateAspectHintText()
 		{
-			// Убедитесь, что TbAspectHint существует в XAML
 			if (TbAspectHint != null)
 			{
 				if (CropMode == ImageCropMode.FixedAspectRatio)
@@ -359,7 +357,6 @@ namespace MusicMessage.UserCtrls
 				(_resizeDirection == "NW" || _resizeDirection == "NE" ||
 				 _resizeDirection == "SW" || _resizeDirection == "SE"))
 			{
-				// Вместо старой логики с жестким 3.0 используем свойство TargetAspectRatio
 				if (Math.Abs(deltaX) > Math.Abs(deltaY))
 				{
 					newHeight = newWidth / TargetAspectRatio;
@@ -595,14 +592,12 @@ namespace MusicMessage.UserCtrls
 
 			var ib = GetImageBounds();
 
-			// Используем логику в зависимости от режима
 			double w, h;
 			if (CropMode == ImageCropMode.FixedAspectRatio)
 			{
 				w = Math.Min(400, ib.Width);
 				h = w / TargetAspectRatio;
 
-				// Для аватара (квадрат) убедимся, что размер адекватный
 				if (TargetAspectRatio == 1.0)
 				{
 					w = h = Math.Min(300, Math.Min(ib.Width, ib.Height));

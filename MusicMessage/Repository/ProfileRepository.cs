@@ -41,7 +41,6 @@ namespace MusicMessage.Repository
 			var existingUser = await context.Users.FindAsync(user.UserId);
 			if (existingUser != null)
 			{
-				// ОБРЕЗАЕМ СТРОКИ ДО МАКСИМАЛЬНОЙ ДЛИНЫ
 				existingUser.FirstName = TruncateString(user.FirstName, 100);
 				existingUser.LastName = TruncateString(user.LastName, 100);
 				existingUser.DateOfBirth = user.DateOfBirth;
@@ -50,7 +49,7 @@ namespace MusicMessage.Repository
 				existingUser.Country = TruncateString(user.Country, 100);
 				existingUser.Bio = TruncateString(user.Bio, 500);
 				existingUser.AvatarPath = user.AvatarPath;
-				existingUser.ProfileCoverPath = user.ProfileCoverPath; // ДОБАВЬТЕ ЭТУ СТРОЧКУ
+				existingUser.ProfileCoverPath = user.ProfileCoverPath; 
 
 				await context.SaveChangesAsync();
 
@@ -104,7 +103,6 @@ namespace MusicMessage.Repository
 
 		public async Task<string> UploadAvatarAsync(int userId, byte[] imageData)
 		{
-			// Реализация загрузки аватара
 			var fileName = $"avatar_{userId}_{DateTime.Now:yyyyMMddHHmmss}.jpg";
 			var filePath = Path.Combine("Avatars", fileName);
 
@@ -116,7 +114,6 @@ namespace MusicMessage.Repository
 
 		public async Task<string> UploadCoverAsync(int userId, byte[] imageData)
 		{
-			// Реализация загрузки обложки
 			var fileName = $"cover_{userId}_{DateTime.Now:yyyyMMddHHmmss}.jpg";
 			var filePath = Path.Combine("Covers", fileName);
 

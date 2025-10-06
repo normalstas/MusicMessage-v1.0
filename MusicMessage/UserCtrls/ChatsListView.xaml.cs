@@ -15,9 +15,7 @@ using System.Windows.Shapes;
 
 namespace MusicMessage.UserCtrls
 {
-	/// <summary>
-	/// Логика взаимодействия для ChatsListView.xaml
-	/// </summary>
+
 	public partial class ChatsListView : UserControl
 	{
 		public ChatsListView()

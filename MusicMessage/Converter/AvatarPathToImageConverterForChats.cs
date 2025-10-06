@@ -32,11 +32,10 @@ namespace MusicMessage.Converter
 				}
 				catch
 				{
-					// Игнорируем ошибки
+					
 				}
 			}
 
-			// Возвращаем placeholder если аватар не найден
 			return new BitmapImage(new Uri("pack://application:,,,/Assets/default-avatar.png"));
 		}
 

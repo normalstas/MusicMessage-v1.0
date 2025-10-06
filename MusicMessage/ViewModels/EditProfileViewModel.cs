@@ -44,7 +44,6 @@ namespace MusicMessage.ViewModels
 
 					if (IsCoverEditingMode && !string.IsNullOrEmpty(value) && File.Exists(value))
 					{
-						// Здесь можно вызвать загрузку
 						OnCoverPathChanged?.Invoke(value);
 					}
 				}
@@ -66,20 +65,14 @@ namespace MusicMessage.ViewModels
 			_profileRepository = profileRepository;
 			_authService = authService;
 
-			// Сохраняем оригинал и создаем копию для редактирования
+			
 			_originalUser = _authService.CurrentUser;
 			EditedUser = _originalUser.Clone();
 			
 			LoadImages();
 		}
 
-		private async void LoadAvatar()
-		{
-			if (!string.IsNullOrEmpty(EditedUser.AvatarPath))
-			{
-				AvatarImage = await LoadImageAsync(EditedUser.AvatarPath);
-			}
-		}
+		
 
 
 		[RelayCommand]
@@ -107,21 +100,7 @@ namespace MusicMessage.ViewModels
 				MessageBox.Show($"Ошибка при сохранении аватарки: {ex.Message}");
 			}
 		}
-		private async Task UpdateAvatarImageAsync(string imagePath)
-		{
-			try
-			{
-				var image = await LoadImageAsync(imagePath);
-				AvatarImage = image;
-
-				// Принудительно обновляем привязку
-				OnPropertyChanged(nameof(AvatarImage));
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Ошибка обновления аватарки: {ex.Message}");
-			}
-		}
+		
 		[RelayCommand]
 		private void CancelAvatarEdit()
 		{
@@ -163,7 +142,7 @@ namespace MusicMessage.ViewModels
 					Console.WriteLine($"Selected file: {selectedPath}");
 					Console.WriteLine($"File exists: {File.Exists(selectedPath)}");
 
-					// Копируем файл во временную папку
+					
 					var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temp");
 					Directory.CreateDirectory(tempDir);
 
@@ -173,8 +152,7 @@ namespace MusicMessage.ViewModels
 					SelectedCoverPath = tempFilePath;
 					IsCoverEditingMode = true;
 
-					// УБРАТЬ ЭТУ СТРОКУ - ViewModel не должна обращаться к View
-					// CoverCropper?.LoadImage(tempFilePath);
+					
 				}
 				catch (Exception ex)
 				{
@@ -194,42 +172,7 @@ namespace MusicMessage.ViewModels
 			MessageBox.Show("Обложка удалена!");
 		}
 
-		private string ProcessCoverUpload(string filePath)
-		{
-			try
-			{
-				if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-				{
-					MessageBox.Show("Файл для загрузки не найден");
-					return null;
-				}
-
-				var coversDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Covers");
-				Directory.CreateDirectory(coversDir);
-
-				var fileName = $"cover_{_originalUser.UserId}_{DateTime.Now:yyyyMMddHHmmss}.jpg";
-				var destinationPath = Path.Combine(coversDir, fileName);
-
-				// Удаляем старую обложку если есть
-				if (!string.IsNullOrEmpty(_originalUser.ProfileCoverPath))
-				{
-					var oldCoverPath = Path.Combine(coversDir, _originalUser.ProfileCoverPath);
-					if (File.Exists(oldCoverPath))
-					{
-						File.Delete(oldCoverPath);
-					}
-				}
-
-				File.Copy(filePath, destinationPath, true);
-				return fileName;
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show($"Ошибка загрузки обложки: {ex.Message}");
-				return null;
-			}
-		}
-
+		
 		public async void LoadImages()
 		{
 			if (!string.IsNullOrEmpty(EditedUser.AvatarPath))
@@ -271,15 +214,15 @@ namespace MusicMessage.ViewModels
 		{
 			try
 			{
-				// ВАЛИДАЦИЯ
+				
 				if (!ValidateUserData()) return;
 
-				// ДЕБАГ: проверяем значения перед сохранением
+			
 				
 
 				await _profileRepository.UpdateUserProfileAsync(EditedUser);
 
-				// Обновляем текущего пользователя
+				
 				_originalUser.FirstName = EditedUser.FirstName;
 				_originalUser.LastName = EditedUser.LastName;
 				_originalUser.DateOfBirth = EditedUser.DateOfBirth;
@@ -288,8 +231,7 @@ namespace MusicMessage.ViewModels
 				_originalUser.Country = EditedUser.Country;
 				_originalUser.Bio = EditedUser.Bio;
 				_originalUser.AvatarPath = EditedUser.AvatarPath;
-				_originalUser.ProfileCoverPath = EditedUser.ProfileCoverPath; // ДОБАВЬТЕ
-
+				_originalUser.ProfileCoverPath = EditedUser.ProfileCoverPath;
 				
 
 				MessageBox.Show("Профиль успешно сохранен!");
@@ -302,7 +244,7 @@ namespace MusicMessage.ViewModels
 		}
 		private bool ValidateUserData()
 		{
-			// Проверка длины полей
+			
 			if (!string.IsNullOrEmpty(EditedUser.Gender) && EditedUser.Gender.Length > 10)
 			{
 				MessageBox.Show("Значение поля 'Пол' слишком длинное. Максимум 10 символов.");
@@ -360,7 +302,7 @@ namespace MusicMessage.ViewModels
 				EditedUser.ProfileCoverPath = fileName;
 				IsCoverEditingMode = false;
 
-				// ОБНОВЛЯЕМ изображение
+				
 				await LoadCoverImageAsync();
 				OnPropertyChanged(nameof(CoverImage));
 
@@ -377,22 +319,7 @@ namespace MusicMessage.ViewModels
 		{
 			IsCoverEditingMode = false;
 		}
-		//private string ProcessAvatarUpload(string filePath)
-		//{
-		//	// Создаем папку для аватаров если нет
-		//	var avatarsDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Avatars");
-		//	Directory.CreateDirectory(avatarsDir);
-
-		//	// Генерируем уникальное имя файла
-		//	var fileName = $"avatar_{_originalUser.UserId}_{DateTime.Now:yyyyMMddHHmmss}{Path.GetExtension(filePath)}";
-		//	var destinationPath = Path.Combine(avatarsDir, fileName);
-
-		//	// Копируем файл
-		//	File.Copy(filePath, destinationPath, true);
-
-		//	// Возвращаем ТОЛЬКО имя файла, без пути
-		//	return fileName;
-		//}
+	
 
 		private async Task<BitmapImage> LoadImageAsync(string fileName)
 		{

@@ -32,7 +32,7 @@ namespace MusicMessage.Repository
 		public async Task<User> LoginAsync(string username, string password)
 		{
 			using var context = _contextFactory.CreateDbContext();
-			// Используем ConfigureAwait(false) для операций с БД
+			
 			var user = await context.Users
 				.FirstOrDefaultAsync(u => u.UserName == username)
 				.ConfigureAwait(false);
@@ -47,7 +47,7 @@ namespace MusicMessage.Repository
 			_currentUser = user;
 			user.LastLogin = DateTime.UtcNow;
 
-			// Сохраняем изменения асинхронно
+			
 			await context.SaveChangesAsync().ConfigureAwait(false);
 
 			return user;
@@ -56,7 +56,7 @@ namespace MusicMessage.Repository
 		public async Task<User> RegisterAsync(string username, string email, string password, string firstname,string lastname)
 		{
 			using var context = _contextFactory.CreateDbContext();
-			// Проверка на существующего пользователя
+			
 			if (await context.Users.AnyAsync(u => u.UserName == username || u.Email == email))
 				return null;
 
@@ -73,8 +73,7 @@ namespace MusicMessage.Repository
 			context.Users.Add(newUser);
 			await context.SaveChangesAsync();
 
-			// Не логинимся автоматически после регистрации?
-			// _currentUser = newUser;
+			
 			return newUser;
 		}
 
@@ -85,7 +84,7 @@ namespace MusicMessage.Repository
 
 		private string HashPassword(string password)
 		{
-			// ВРЕМЕННАЯ РЕАЛИЗАЦИЯ. ДЛЯ ПРОДУКЦИИ ИСПОЛЬЗУЙТЕ BCrypt или PBKDF2!
+			
 			using (var sha256 = SHA256.Create())
 			{
 				var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));

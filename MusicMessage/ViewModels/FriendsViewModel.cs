@@ -37,7 +37,7 @@ namespace MusicMessage.ViewModels
 		private bool _isLoading;
 
 		[ObservableProperty]
-		private string _currentSection = "All"; // All, Online, Pending, Search
+		private string _currentSection = "All"; 
 
 		public FriendsViewModel(IFriendsRepository friendsRepository, IAuthService authService, IChatRepository chatRepository)
 		{
@@ -91,10 +91,8 @@ namespace MusicMessage.ViewModels
 				{
 					await _friendsRepository.CancelFriendRequestAsync(friendship.FriendshipId);
 
-					// Обновляем статус локально
 					user.FriendshipStatus = null;
 
-					// Уведомляем UI об изменении
 					user.OnPropertyChanged(nameof(user.FriendshipStatus));
 					user.OnPropertyChanged(nameof(user.FriendshipStatusText));
 
@@ -202,7 +200,6 @@ namespace MusicMessage.ViewModels
 					user.UserId
 				);
 
-				// Обновляем только этого пользователя
 				user.FriendshipStatus = FriendshipStatus.Pending;
 
 				MessageBox.Show("Заявка отправлена!");
@@ -220,17 +217,14 @@ namespace MusicMessage.ViewModels
 			{
 				await _friendsRepository.AcceptFriendRequestAsync(request.FriendshipId);
 
-				// Удаляем из заявок
 				FriendRequests.Remove(request);
 
-				// Добавляем в друзья
 				var newFriend = request.RequesterId == _authService.CurrentUser.UserId
 					? request.Addressee
 					: request.Requester;
 
 				Friends.Add(newFriend);
 
-				// Обновляем статус в поиске если этот пользователь там есть
 				UpdateSearchResultStatus(newFriend.UserId, FriendshipStatus.Accepted);
 
 				MessageBox.Show($"{newFriend.FullName} добавлен в друзья!");
@@ -247,7 +241,6 @@ namespace MusicMessage.ViewModels
 			{
 				await _friendsRepository.RejectFriendRequestAsync(request.FriendshipId);
 
-				// Просто удаляем из заявок
 				FriendRequests.Remove(request);
 
 				MessageBox.Show("Заявка отклонена");
@@ -269,7 +262,6 @@ namespace MusicMessage.ViewModels
 
 				if (friendship != null)
 				{
-					// Передаем оба параметра: currentUserId и targetUserId
 					await _friendsRepository.BlockUserAsync(
 						_authService.CurrentUser.UserId,
 						user.UserId
@@ -297,11 +289,9 @@ namespace MusicMessage.ViewModels
 		[RelayCommand]
 		private async Task StartChatWithFriend(User friend)
 		{
-			// Создаем чат с другом
 			await _chatRepository.CreateChatPreviewAsync(_authService.CurrentUser.UserId, friend.UserId);
 
-			// Здесь можно вызвать событие для открытия чата
-			// Например: OnChatWithFriendRequested?.Invoke(friend.UserId);
+			
 		}
 
 		[RelayCommand]
@@ -339,10 +329,7 @@ namespace MusicMessage.ViewModels
 
 				if (userId > 0)
 				{
-					// НЕ создаем чат заранее, только переходим к нему
-					// Чат создастся автоматически при отправке первого сообщения
-
-					// Вызываем событие для перехода в чат
+				
 					OnChatRequested?.Invoke(userId);
 				}
 			}

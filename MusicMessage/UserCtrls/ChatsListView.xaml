@@ -85,7 +85,7 @@
              TextTrimming="CharacterEllipsis" Foreground="Gray"/>
                             </Grid>
 
-                            <!-- Время и счетчик непрочитанных -->
+                            <!-- Время и счетчик -->
                             <StackPanel Grid.Column="2" HorizontalAlignment="Right" Margin="10,0,0,0">
                                 <TextBlock Text="{Binding LastMessageTime, StringFormat={}{0:HH:mm}}" 
                                  Foreground="Gray" FontSize="10"/>

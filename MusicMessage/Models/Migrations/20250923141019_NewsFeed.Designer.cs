@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MusicMessage.Models;
 
@@ -11,9 +12,11 @@ using MusicMessage.Models;
 namespace MusicMessage.Models.Migrations
 {
     [DbContext(typeof(MessangerBaseContext))]
-    partial class MessangerBaseContextModelSnapshot : ModelSnapshot
+    [Migration("20250923141019_NewsFeed")]
+    partial class NewsFeed
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -77,33 +80,6 @@ namespace MusicMessage.Models.Migrations
                         .IsUnique();
 
                     b.ToTable("ChatPreviews", (string)null);
-                });
-
-            modelBuilder.Entity("MusicMessage.Models.CommentLike", b =>
-                {
-                    b.Property<int>("LikeId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LikeId"));
-
-                    b.Property<int>("CommentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LikedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("LikeId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("CommentId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("CommentLikes", (string)null);
                 });
 
             modelBuilder.Entity("MusicMessage.Models.Friendship", b =>
@@ -275,9 +251,6 @@ namespace MusicMessage.Models.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("LikesCount")
-                        .HasColumnType("int");
 
                     b.Property<int?>("ParentCommentId")
                         .HasColumnType("int");
@@ -476,25 +449,6 @@ namespace MusicMessage.Models.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MusicMessage.Models.CommentLike", b =>
-                {
-                    b.HasOne("MusicMessage.Models.PostComment", "Comment")
-                        .WithMany("Likes")
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("MusicMessage.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Comment");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("MusicMessage.Models.Friendship", b =>
                 {
                     b.HasOne("MusicMessage.Models.User", "Addressee")
@@ -544,7 +498,7 @@ namespace MusicMessage.Models.Migrations
                     b.HasOne("MusicMessage.Models.User", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Author");
@@ -555,13 +509,13 @@ namespace MusicMessage.Models.Migrations
                     b.HasOne("MusicMessage.Models.User", "Author")
                         .WithMany()
                         .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("MusicMessage.Models.PostComment", "ParentComment")
                         .WithMany("Replies")
                         .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.ClientCascade);
 
                     b.HasOne("MusicMessage.Models.Post", "Post")
                         .WithMany("Comments")
@@ -587,7 +541,7 @@ namespace MusicMessage.Models.Migrations
                     b.HasOne("MusicMessage.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Post");
@@ -606,7 +560,7 @@ namespace MusicMessage.Models.Migrations
                     b.HasOne("MusicMessage.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Post");
@@ -649,8 +603,6 @@ namespace MusicMessage.Models.Migrations
 
             modelBuilder.Entity("MusicMessage.Models.PostComment", b =>
                 {
-                    b.Navigation("Likes");
-
                     b.Navigation("Replies");
                 });
 

@@ -39,15 +39,13 @@ namespace MusicMessage.Repository
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			// Разделяем поисковый запрос на слова
 			var searchWords = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
 			var query = context.Users.Where(u => u.UserId != currentUserId);
 
-			// Строим сложный запрос для поиска по имени и фамилии
+
 			if (searchWords.Length == 1)
 			{
-				// Если одно слово - ищем в имени, фамилии или логине
 				var word = searchWords[0];
 				query = query.Where(u =>
 					u.FirstName.Contains(word) ||
@@ -55,7 +53,6 @@ namespace MusicMessage.Repository
 			}
 			else if (searchWords.Length >= 2)
 			{
-				// Если два слова или больше - ищем комбинации имени и фамилии
 				var firstName = searchWords[0];
 				var lastName = searchWords[1];
 
@@ -76,7 +73,6 @@ namespace MusicMessage.Repository
 				})
 				.ToListAsync();
 
-			// Загружаем статусы дружбы
 			foreach (var user in users)
 			{
 				var friendship = await GetFriendshipStatusAsync(currentUserId, user.UserId);
@@ -90,7 +86,6 @@ namespace MusicMessage.Repository
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			// Проверяем, нет ли уже существующей заявки
 			var existingFriendship = await context.Friendships
 				.FirstOrDefaultAsync(f =>
 					(f.RequesterId == requesterId && f.AddresseeId == addresseeId) ||
@@ -116,7 +111,6 @@ namespace MusicMessage.Repository
 		{
 			using var context = _contextFactory.CreateDbContext();
 
-			// Пытаемся найти существующий чат
 			var existingChat = await context.ChatPreviews
 				.FirstOrDefaultAsync(c =>
 					(c.UserId == userId1 && c.OtherUserId == userId2) ||
@@ -127,7 +121,6 @@ namespace MusicMessage.Repository
 				return existingChat;
 			}
 
-			// Если чата нет - создаем новый
 			var otherUser = await context.Users.FindAsync(userId2);
 			if (otherUser == null) return null;
 
@@ -181,8 +174,6 @@ namespace MusicMessage.Repository
 					(f.RequesterId == user1Id && f.AddresseeId == user2Id) ||
 					(f.RequesterId == user2Id && f.AddresseeId == user1Id));
 		}
-
-		// Реализуйте остальные методы по аналогии...
 		public Task RejectFriendRequestAsync(int friendshipId) => UpdateFriendshipStatus(friendshipId, FriendshipStatus.Rejected);
 		public Task RemoveFriendAsync(int friendshipId) => UpdateFriendshipStatus(friendshipId, FriendshipStatus.Rejected);
 		public Task BlockUserAsync(int currentUserId, int targetUserId) => UpdateFriendshipStatus(currentUserId, targetUserId, FriendshipStatus.Blocked);

@@ -1,30 +1,23 @@
-﻿using MusicMessage.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
-using System.Windows;
 
 namespace MusicMessage.Converter
 {
-	public class FriendshipStatusToVisibilityConverter : IValueConverter
+	public class BoolToCollapsedConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (parameter == null) return Visibility.Collapsed;
-
-			string param = parameter.ToString();
-
-			if (param == "Null")
+			if (value is bool isVisible)
 			{
-				return value == null ? Visibility.Visible : Visibility.Collapsed;
+				var parts = parameter?.ToString()?.Split('|') ?? new[] { "−", "+" };
+				return isVisible ? parts[0] : parts[1];
 			}
-
-			
-			return value?.ToString() == param ? Visibility.Visible : Visibility.Collapsed;
+			return "+";
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

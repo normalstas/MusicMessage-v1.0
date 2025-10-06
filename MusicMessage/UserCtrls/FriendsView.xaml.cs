@@ -15,9 +15,7 @@ using System.Windows.Shapes;
 
 namespace MusicMessage.UserCtrls
 {
-	/// <summary>
-	/// Логика взаимодействия для FriendsView.xaml
-	/// </summary>
+
 	public partial class FriendsView : UserControl
 	{
 		public FriendsView()

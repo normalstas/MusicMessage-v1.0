@@ -13,9 +13,7 @@ namespace MusicMessage.Converter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			// Этот конвертер будет показывать иконку редактирования
-			// В реальной реализации вы можете добавить флаг "IsEdited" в модель Message
-			return Visibility.Collapsed; // По умолчанию скрываем
+			return Visibility.Collapsed;
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

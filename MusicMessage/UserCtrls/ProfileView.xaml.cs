@@ -15,9 +15,7 @@ using System.Windows.Shapes;
 
 namespace MusicMessage.UserCtrls
 {
-	/// <summary>
-	/// Логика взаимодействия для ProfileView.xaml
-	/// </summary>
+	
 	public partial class ProfileView : UserControl
 	{
 		public ProfileView()

@@ -63,11 +63,6 @@
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <TextBlock x:Name="TbAspectHint" Text="⬜ Соотношение: Свободное" 
                    VerticalAlignment="Center" Margin="5,0" Foreground="White"/>
-                <TextBlock Text="🖱️ Колесико - масштаб" VerticalAlignment="Center" Margin="5,0" Foreground="White"/>
-                <TextBlock Text="📷 ЛКМ на фото - двигать" VerticalAlignment="Center" Margin="5,0" Foreground="White"/>
-                <TextBlock Text="⬜ ЛКМ в сетке - двигать" VerticalAlignment="Center" Margin="5,0" Foreground="White"/>
-                <TextBlock Text="↔ ЛКМ на краю - resize" VerticalAlignment="Center" Margin="5,0" Foreground="White"/>
-
                 <Button Content="✅ Сохранить" Click="Save_Click" 
                Margin="10,0" Padding="15,5" Background="#007ACC" Foreground="White"/>
                 <Button Content="❌ Отмена" Click="Cancel_Click" 

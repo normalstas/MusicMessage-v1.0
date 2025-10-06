@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 namespace MusicMessage.Models
 {
-	[Table("PostLikes")]
-	public class PostLike
+	[Table("CommentLikes")]
+	public class CommentLike
 	{
 		[Key]
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int LikeId { get; set; }
 
 		[Required]
-		public int PostId { get; set; }
+		public int CommentId { get; set; }
 
 		[Required]
 		public int UserId { get; set; }
@@ -25,8 +25,8 @@ namespace MusicMessage.Models
 		public DateTime LikedAt { get; set; } = DateTime.UtcNow;
 
 		
-		[ForeignKey("PostId")]
-		public virtual Post Post { get; set; }
+		[ForeignKey("CommentId")]
+		public virtual PostComment Comment { get; set; }
 
 		[ForeignKey("UserId")]
 		public virtual User User { get; set; }

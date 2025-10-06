@@ -41,7 +41,7 @@ namespace MusicMessage.Models
 		public int UnreadCount { get; set; }
 		[MaxLength(500)]
 		public string AvatarPath { get; set; }
-		// Навигационные свойства
+	
 		[ForeignKey("UserId")]
 		public virtual User User { get; set; }
 

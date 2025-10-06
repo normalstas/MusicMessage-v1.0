@@ -15,9 +15,6 @@ using System.Windows.Shapes;
 
 namespace MusicMessage.UserCtrls
 {
-	/// <summary>
-	/// Логика взаимодействия для LoginUserControl.xaml
-	/// </summary>
 	public partial class LoginUserControl : UserControl
 	{
 		public LoginUserControl()
@@ -28,7 +25,6 @@ namespace MusicMessage.UserCtrls
 
 		private void LoginUserControl_Loaded(object sender, RoutedEventArgs e)
 		{
-			// Подписываемся на события изменения пароля после загрузки контрола
 			LoginPasswordBox.PasswordChanged += PasswordBox_PasswordChanged;
 			RegisterPasswordBox.PasswordChanged += PasswordBox_PasswordChanged;
 		}
@@ -41,7 +37,6 @@ namespace MusicMessage.UserCtrls
 			}
 		}
 
-		// Очищаем пароль при переключении между режимами
 		private void UpdatePasswordBoxes()
 		{
 			if (DataContext is ViewModels.LoginViewModel viewModel)
@@ -51,7 +46,6 @@ namespace MusicMessage.UserCtrls
 			}
 		}
 
-		// Можно добавить обработчик изменения DataContext для обновления паролей
 		protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
 		{
 			base.OnPropertyChanged(e);

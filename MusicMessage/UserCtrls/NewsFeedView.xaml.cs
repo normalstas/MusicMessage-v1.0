@@ -15,12 +15,18 @@ using System.Windows.Shapes;
 
 namespace MusicMessage.UserCtrls
 {
-
-	public partial class ChatHeader : UserControl
-	{
-		public ChatHeader()
-		{
-			InitializeComponent();
+    public partial class NewsFeedView : UserControl
+    {
+        public NewsFeedView()
+        {
+            InitializeComponent();
+			Loaded += async (s, e) =>
+			{
+				if (DataContext is ViewModels.NewsFeedViewModel vm)
+				{
+					await vm.LoadNewsFeedAsync();
+				}
+			};
 		}
-	}
+    }
 }

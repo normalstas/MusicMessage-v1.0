@@ -21,22 +21,12 @@ using MusicMessage.Repository;
 using Microsoft.Extensions.DependencyInjection;
 namespace MusicMessage.UserCtrls
 {
-    /// <summary>
-    /// Логика взаимодействия для ChatUserCtrl.xaml
-    /// </summary>
     public partial class ChatUserCtrl : UserControl
     {
         public ChatUserCtrl()
 		{
 			InitializeComponent();
 
-
-			//var vm = (ChatViewModel)DataContext;
-			//vm.Messages.CollectionChanged += (s, e) =>
-			//{
-			//	if (e.NewItems?.Count > 0)
-			//		ScrollToLastMessage();
-			//};
 			Loaded += OnChatUserControlLoaded;
 			MessagesListView.PreviewMouseRightButtonDown += MessagesListView_PreviewMouseRightButtonDown;
 		}
@@ -44,10 +34,10 @@ namespace MusicMessage.UserCtrls
 		{
 			if (DataContext is ChatViewModel vm)
 			{
-				// Подписываемся на событие прокрутки
+				
 				vm.ScrollToLastRequested += OnScrollToLastRequested;
 
-				// Подписываемся на изменение коллекции для новых сообщений
+				
 				vm.Messages.CollectionChanged += (s, args) =>
 				{
 					if (args.NewItems?.Count > 0)
@@ -156,7 +146,7 @@ namespace MusicMessage.UserCtrls
 				ToolTip = "Добавить реакцию"
 			};
 
-			// Список популярных эмодзи для реакций
+			
 			var popularEmojis = new[] { "👍", "❤️", "😂", "😮", "😢", "😠", "👎" };
 
 			foreach (var emoji in popularEmojis)
@@ -175,7 +165,7 @@ namespace MusicMessage.UserCtrls
 			}
 			contextMenu.Items.Add(reactionsSubMenu);
 			contextMenu.Items.Add(new Separator());
-			// Добавляем кнопку редактирования (только для редактируемых текстовых сообщений)
+			
 			if (!message.IsVoiceMessage && message.IsEditable)
 			{
 				var editItem = new MenuItem
@@ -191,7 +181,7 @@ namespace MusicMessage.UserCtrls
 				contextMenu.Items.Add(new Separator());
 			}
 
-			// Добавляем кнопку ответа
+			
 			var replyItem = new MenuItem
 			{
 				Header = "↩️ Ответить",
@@ -207,7 +197,7 @@ namespace MusicMessage.UserCtrls
 			bool isMyMessage = message.SenderId == viewModel.CurrentUserId;
 			bool isReceivedMessage = message.ReceiverId == viewModel.CurrentUserId;
 
-			// Основные опции удаления
+			
 			if (isMyMessage)
 			{
 				AddDeleteOptionsForMyMessage(contextMenu, viewModel, message);
@@ -217,13 +207,13 @@ namespace MusicMessage.UserCtrls
 				AddDeleteOptionsForReceivedMessage(contextMenu, viewModel, message);
 			}
 
-			// Опции в зависимости от типа сообщения
+			
 			AddMessageTypeSpecificOptions(contextMenu, viewModel, message);
 
-			// Общие опции
+			
 			AddCommonOptions(contextMenu, viewModel, message);
 
-			// Показываем меню
+			
 			contextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
 			contextMenu.IsOpen = true;
 		}
@@ -236,7 +226,7 @@ namespace MusicMessage.UserCtrls
 				Command = viewModel.DeleteMessageForMeCommand,
 				CommandParameter = message,
 				ToolTip = "Сообщение останется у собеседника",
-				Style = (Style)FindResource("DeleteMenuItemStyle") // Применяем стиль
+				Style = (Style)FindResource("DeleteMenuItemStyle")
 			};
 
 			var deleteForEveryoneItem = new MenuItem
@@ -245,7 +235,7 @@ namespace MusicMessage.UserCtrls
 				Command = viewModel.DeleteMessageForEveryoneCommand,
 				CommandParameter = message,
 				ToolTip = "Сообщение удалится у всех участников чата",
-				Style = (Style)FindResource("DeleteForAllMenuItemStyle") // Применяем стиль
+				Style = (Style)FindResource("DeleteForAllMenuItemStyle")
 			};
 			
 			contextMenu.Items.Add(deleteForMeItem);
@@ -261,7 +251,7 @@ namespace MusicMessage.UserCtrls
 				Command = viewModel.DeleteMessageForReceiverCommand,
 				CommandParameter = message,
 				ToolTip = "Сообщение удалится только в вашем чате",
-				Style = (Style)FindResource("DeleteMenuItemStyle") // Применяем стиль
+				Style = (Style)FindResource("DeleteMenuItemStyle") 
 			};
 
 			contextMenu.Items.Add(deleteForMeItem);
@@ -298,7 +288,7 @@ namespace MusicMessage.UserCtrls
 				contextMenu.Items.Add(copyTextItem);
 				contextMenu.Items.Add(new Separator());
 			}
-			// УБЕРИТЕ отсюда блок с редактированием - он уже добавлен выше
+			
 		}
 
 		private void AddCommonOptions(ContextMenu contextMenu, ChatViewModel viewModel, Message message)
@@ -309,7 +299,7 @@ namespace MusicMessage.UserCtrls
 				Command = viewModel.CopyTimeCommand,
 				CommandParameter = message.Timestamp,
 				ToolTip = "Скопировать время отправки",
-				Style = (Style)FindResource("ActionMenuItemStyle") // Применяем стиль
+				Style = (Style)FindResource("ActionMenuItemStyle") 
 			};
 
 			contextMenu.Items.Add(copyTimeItem);
@@ -333,33 +323,33 @@ namespace MusicMessage.UserCtrls
 			{
 				try
 				{
-					// Прокручиваем к сообщению
+					
 					MessagesListView.ScrollIntoView(message);
 
-					// Даем время для рендеринга
+					
 					Dispatcher.BeginInvoke(() =>
 					{
 						var item = MessagesListView.ItemContainerGenerator.ContainerFromItem(message) as ListViewItem;
 						if (item != null)
 						{
-							// Сохраняем оригинальный фон
+							
 							var originalBackground = item.Background;
 
-							// Создаем анимацию подсветки
+							
 							var highlightBrush = new SolidColorBrush(Colors.Yellow);
 							item.Background = highlightBrush;
 
-							// Анимация плавного исчезновения
+							
 							var animation = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(2));
 							animation.Completed += (s, e) =>
 							{
-								// Возвращаем оригинальный фон после анимации
+								
 								item.Background = originalBackground;
 							};
 
 							highlightBrush.BeginAnimation(Brush.OpacityProperty, animation);
 
-							// Фокусируем на элементе
+							
 							item.Focus();
 						}
 					}, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
@@ -371,52 +361,6 @@ namespace MusicMessage.UserCtrls
 			}, System.Windows.Threading.DispatcherPriority.Background);
 		}
 
-		//private void MessagesListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
-		//{
-		//	var listView = sender as ListView;
-		//	if (listView == null) return;
-
-		//	// Получаем элемент под курсором мыши
-		//	var originalSource = e.OriginalSource as FrameworkElement;
-		//	var message = originalSource?.DataContext as Message;
-
-		//	if (message == null) return;
-
-		//	// Создаем контекстное меню
-		//	var contextMenu = new ContextMenu();
-
-		//	// Проверяем, является ли сообщение нашим
-		//	var viewModel = DataContext as ChatViewModel;
-		//	if (viewModel == null) return;
-
-		//	bool isMyMessage = message.SenderId == viewModel.CurrentUserId;
-
-		//	if (isMyMessage)
-		//	{
-		//		// Добавляем пункты меню только для своих сообщений
-		//		var deleteForMeItem = new MenuItem
-		//		{
-		//			Header = "Удалить для меня",
-		//			Command = viewModel.DeleteMessageForMeCommand,
-		//			CommandParameter = message
-		//		};
-
-		//		var deleteForEveryoneItem = new MenuItem
-		//		{
-		//			Header = "Удалить для всех",
-		//			Command = viewModel.DeleteMessageForEveryoneCommand,
-		//			CommandParameter = message
-		//		};
-
-		//		contextMenu.Items.Add(deleteForMeItem);
-		//		contextMenu.Items.Add(deleteForEveryoneItem);
-		//	}
-
-		//	// Устанавливаем контекстное меню для ListView
-		//	listView.ContextMenu = contextMenu;
-		//	contextMenu.IsOpen = true;
-
-		//	e.Handled = true;
-		//}
+		
 	}
 }
